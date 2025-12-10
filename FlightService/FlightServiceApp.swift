@@ -14,7 +14,7 @@ struct FlightServiceApp: App {
 
     var body: some Scene {
         WindowGroup {
-          FlightView(viewModel: .init())
+          MainView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }

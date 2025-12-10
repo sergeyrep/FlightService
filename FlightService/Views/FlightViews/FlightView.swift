@@ -10,82 +10,94 @@ import SwiftUI
 struct FlightView: View {
   @StateObject var viewModel: FlightViewModel
   @FocusState private var focusedField: SearchField?
-  
+
   var body: some View {
     ScrollView {
-      LazyVStack {
-        Toggle("OneWay", isOn: $viewModel.isOneWay)
-          .padding()
-        datePickers
-        cityField(
-          title: "От куда летим",
-          icon: "airplane.departure",
-          text: $viewModel.origin,
-          suggestions: viewModel.suggestionsOrigin,
-          field: .origin
-        )
-        cityField(
-          title: "Куда летим",
-          icon: "airplane.arrival",
-          text: $viewModel.destination,
-          suggestions: viewModel.suggestionsDestination,
-          field: .destination
-        )
-        
-        //ifFocused(for: .origin)
-        
-        
-        
-      //  ifFocused(for: .destination)
-        
-        ForEach(viewModel.flights) { flight in
-          VStack(alignment: .leading) {
-            Text(flight.airline)
-            Text("Time: \(flight.departureTime)")
-            Text("Price: \(flight.price) \(flight.currency.uppercased())")
-            Text("\(flight.origin) --> \( flight.destination)")
-            Text("Return: \(String(describing: flight.returnTime))")
+      LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+        originFields        
+        Section(header: destinationFields) {
+          toogleOneWay
+          Button("Show flight") {
+            Task {
+              await viewModel.loadFlights()
+            }
           }
-        }
-        Button("Show flight") {
-          Task {
-            await viewModel.loadFlights()
-          }
+          cardFlight
         }
       }
     }
   }
-  
+
   @ViewBuilder
-  private func ifFocused(for field: SearchField) -> some View {
-    switch field {
-    case .origin:
-      if focusedField == .origin && !viewModel.suggestionsOrigin.isEmpty {
-        SuggestionsList(
-          suggestions: viewModel.suggestionsOrigin,
-          onSelect: { suggestion in
-            viewModel.origin = suggestion.code
-            viewModel.suggestionsOrigin = []
-            focusedField = nil
-          }
-        )
-      }
-    case .destination:
-      if focusedField == .destination && !viewModel.suggestionsDestination.isEmpty {
-        SuggestionsList(
-          suggestions: viewModel.suggestionsDestination,
-          onSelect: { suggestion in
-            viewModel.destination = suggestion.code
-            viewModel.suggestionsDestination = []
-            focusedField = nil
-          }
-        )
-      }
-    case .none:
-      EmptyView()
-    }
+  private var originFields: some View {
+      datePickers
+      cityField(
+        title: "От куда летим",
+        icon: "airplane.departure",
+        text: $viewModel.origin,
+        suggestions: viewModel.suggestionsOrigin,
+        field: .origin
+      )
   }
   
+  private var destinationFields: some View {
+    cityField(
+      title: "Куда летим",
+      icon: "airplane.arrival",
+      text: $viewModel.destination,
+      suggestions: viewModel.suggestionsDestination,
+      field: .destination
+    )
+  }
+
+  private var toogleOneWay: some View {
+    Toggle(viewModel.isOneWay ? "В одну сторону" :"Туда-Обратно", isOn: $viewModel.isOneWay)
+      .toggleStyle(.button)
+      .padding()
+  }
+  
+  private var cardFlight: some View {
+    ForEach(viewModel.flights) { flight in
+      VStack(alignment: .leading) {
+        Text(flight.airline)
+        Text("Time: \(flight.departureTime)")
+        Text("Price: \(flight.price) \(flight.currency.uppercased())")
+        Text("\(flight.origin) --> \( flight.destination)")
+        Text("Return: \(String(describing: flight.returnTime))")
+      }
+    }
+  }
+
+//  @ViewBuilder
+//  private func ifFocused(for field: SearchField) -> some View {
+//    switch field {
+//    case .origin:
+//      if focusedField == .origin && !viewModel.suggestionsOrigin.isEmpty {
+//        SuggestionsList(
+//          suggestions: viewModel.suggestionsOrigin,
+//          onSelect: { suggestion in
+//            viewModel.origin = suggestion.code
+//            viewModel.suggestionsOrigin = []
+//            focusedField = nil
+//          }
+//        )
+//      }
+//    case .destination:
+//      if focusedField == .destination && !viewModel.suggestionsDestination.isEmpty {
+//        SuggestionsList(
+//          suggestions: viewModel.suggestionsDestination,
+//          onSelect: { suggestion in
+//            viewModel.destination = suggestion.code
+//            viewModel.suggestionsDestination = []
+//            focusedField = nil
+//          }
+//        )
+//      }
+//    case .none:
+//      EmptyView()
+//    }
+//  }
+
   private func cityField(
     title: String,
     icon: String,
@@ -104,10 +116,6 @@ struct FlightView: View {
       TextField("какойто текст", text: text)
         .focused($focusedField, equals: field)
         .textFieldStyle(.roundedBorder)
-        .onTapGesture {
-          focusedField = field
-          //можно добавить очистку филдов
-        }
       if focusedField == field && !suggestions.isEmpty {
         SuggestionsList(
           suggestions: suggestions,
@@ -120,24 +128,7 @@ struct FlightView: View {
       }
     }
   }
-  
-//  private var textFields: some View {
-//    TextField("Origin", text: $viewModel.origin)
-//      .focused($focusedField, equals: .origin)
-//      .textFieldStyle(.roundedBorder)
-//      .padding(.horizontal)
-//      .onTapGesture {
-//        viewModel.activeSearchField = .origin
-//      }
-//    TextField("Destination", text: $viewModel.destination)
-//      .focused($focusedField, equals: .destination)
-//      .textFieldStyle(.roundedBorder)
-//      .padding(.horizontal)
-//      .onTapGesture {
-//        viewModel.activeSearchField = .destination
-//      }
-//  }
-  
+
   private var datePickers: some View {
     Section("Dates") {
       DatePicker(
@@ -156,7 +147,7 @@ struct FlightView: View {
           "Return date",
           selection: Binding(
             get: { viewModel.returnDate ?? Date().addingTimeInterval(86400 * 7) },
-            
+
             set: { viewModel.returnDate = $0 }
           ),
           in: viewModel.departDate...,
@@ -171,4 +162,9 @@ struct FlightView: View {
     }
   }
 }
+
+#Preview {
+  FlightView(viewModel: .init())
+}
+
 

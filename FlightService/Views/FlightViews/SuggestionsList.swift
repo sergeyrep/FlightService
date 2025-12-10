@@ -39,3 +39,7 @@ struct SuggestionsList: View {
     .padding(.horizontal)
   }
 }
+
+#Preview {
+  SuggestionsList(suggestions: .init(), onSelect: {_ in })
+}
