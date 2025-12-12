@@ -20,20 +20,53 @@ struct MainView: View {
   
   @State private var showFlight: Bool = false
   
+  @State private var progress: CGFloat = 0
+  @State private var searchBarOffset: CGFloat = 0
+  
   var body: some View {
     ScrollView {
-      header
-      InterestingContent()
-      SalesFlight()
-      WeekendFlight()
+      VStack(spacing: 0) {
+        headScrols
+        LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+          Section(header: searchBar
+            .background(
+              GeometryReader { geometry in
+                Color.clear
+                  .onAppear {
+                    searchBarOffset = geometry.frame(in: .global).minY
+                  }
+                  .onChange(of: geometry.frame(in: .global).minY) { oldValue, newValue in
+                    let distanceFromTop = max(0, searchBarOffset - newValue)
+                    let newProgress = min(distanceFromTop / 100, 1.0)
+                    
+                    withAnimation(.spring(response: 0.3)) {
+                      progress = newProgress
+                    }
+                  }
+              }
+            )
+          ) {
+            InterestingContent()
+            SalesFlight()
+            WeekendFlight()
+            ForEach(0..<50) { circle in
+              Circle()
+            }
+          }
+        }
+      }
     }
     .background(.gray.opacity(0.3))
     .ignoresSafeArea()
+    .onPreferenceChange(ScrollOffsetKey.self) { value in
+      print("Offset = \(value)")
+      progress = value
+    }
     .sheet(isPresented: $showFlight) {
       FlightView(viewModel: .init())
     }
     .onChange(of: isFocused) { _, newValue in
-      if newValue == .origin {
+      if newValue == .origin || newValue == .departure {
         showFlight = true
       }
     }
@@ -47,197 +80,132 @@ struct MainView: View {
     .padding(.bottom, 100)
   }
   
+  @ViewBuilder
   private var searchBar: some View {
-    Section {
+    ZStack {
+      RoundedRectangle(cornerRadius: 20)
+        .fill(Color.white)
+        .shadow(
+          color: .black.opacity(interpolate(from: 0.3, to: 0.1, progress: progress)),
+          radius: interpolate(from: 4, to: 9, progress: progress),
+          x: 0,
+          y: interpolate(from: 2, to: 4, progress: progress)
+        )
       ZStack {
         RoundedRectangle(cornerRadius: 20)
-          .fill(Color.white)
-        ZStack {
-          RoundedRectangle(cornerRadius: 20)
-            .fill(Color.gray.opacity(0.3))
-          HStack {
-            Image(systemName: "magnifyingglass")
+          .fill(Color.gray.opacity(0.3))
+        HStack {
+          if progress < 0.8 {
+          Image(systemName: "magnifyingglass")
+            .foregroundColor(.gray)
+            .font(.system(size: 20))
+            .padding(.leading)
             VStack(spacing: 0) {
               TextField("", text: $text)
                 .focused($isFocused, equals: .origin)
-              
+                .opacity(1.0 - progress)
               Divider()
                 .padding(.vertical)
+                .opacity(1.0 - progress)
               TextField("", text: $text2)
             }
+            .opacity(1.0 - progress * 0.5)
+            .frame(height: 50 * (1.75 - progress))
+          } else {
+            HStack {
+              Image(systemName: "magnifyingglass")
+              TextField("", text: $text2)
+                .focused($isFocused, equals: .departure)
+                .frame(height: 50)
+            }
+              .opacity((progress - 0.7) * 3.3)
           }
         }
-        .padding(EdgeInsets(top: 50, leading: 10, bottom: 5, trailing: 10))
       }
-      .frame(height: 150)
-      .padding(.horizontal)
+      .padding(EdgeInsets(top: 60, leading: 10 * (1.5 - progress), bottom: 5 * (1 - progress), trailing: 10 * (1.5 - progress)))
     }
-    .offset(y: 120)
+    .padding(.horizontal, 20 - (20 * progress))
+    .animation(.spring(response: 0.3), value: progress)
   }
+  
   
   @ViewBuilder
   private var headScrols: some View {
     GeometryReader { geometry in
-      LinearGradient(
-        colors: [Color.blue, Color.blue.opacity(0.5), Color.gray.opacity(0.01)],
-        startPoint: .top,
-        endPoint: .bottom)
-      .frame(height: max(200 + geometry.frame(in: .global).minY, 200))
-      .offset(y: geometry.frame(in: .global).minY > 0 ? -geometry.frame(in: .global).minY : 0)
-    }
-    .frame(height: 200)
-    
-    Text("Тут покупают дешевые авиабилеты")
-      .font(.title.bold())
-      .foregroundColor(Color.white)
-      .multilineTextAlignment(.center)
-  }
-}
-
-struct InterestingContent: View {
-  var body: some View {
-    ZStack {
-      LinearGradient(
-        colors: [Color.blue.opacity(0.6), Color.yellow.opacity(0.3), Color.blue.opacity(0.2), Color.gray.opacity(0.4)],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing)
-      VStack(alignment: .leading) {
-        Text("Увидеть без визы")
-          .font(.system(size: 20, design: .serif))
-          .fontWeight(.bold)
-          .foregroundColor(.black)
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack {
-            ForEach(0..<50) { item in
-              VStack {
-                Image(systemName: "photo.artframe")
-                  .resizable()
-                  .frame(width: 90, height: 90)
-                Text("Name")
-                Text("City")
-                Text("\(Image(systemName: "airplane.circle.fill")) 14500руб")
-              }
-            }
-          }
-        }
-        Button("Показать все места") {
-          
-        }
-        .buttonStyle(.glass)
-        .frame(maxWidth: .infinity, alignment: .center)
-      }
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .padding()
-    }
-    .cornerRadius(20)
-    .padding()
-  }
-}
-
-struct SalesFlight: View {
-  var body: some View {
-    ZStack {
-      LinearGradient(
-        colors: [Color.orange],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing)
-      VStack {
-        Text("Горячие билеты")
-          .font(.system(size: 20, design: .serif))
-          .fontWeight(.bold)
-          .foregroundColor(.black)
-          .padding(.top, 10)
-        Text("Скоро разберут")
+      let offset = geometry.frame(in: .global).minY
+      let isScrolled = offset > 0
+      let headerHeight = 150 + (isScrolled ? offset : 0)
+      ZStack {
+        LinearGradient(
+          colors: [Color.blue, Color.blue.opacity(0.5), Color.gray.opacity(0.01)],
+          startPoint: .top,
+          endPoint: .bottom
+        )
+        .frame(height: headerHeight)
+        .offset(y: isScrolled ? -offset : 0)
         
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack {
-            ForEach(0..<50) { item in
-              ZStack {
-                Rectangle()
-                  .fill(Color.white)
-                  .cornerRadius(20)
-                HStack {
-                  Image(systemName: "photo.artframe")
-                    .resizable()
-                    .frame(width: 90, height: 90)
-                  Text("Name")
-                  Text("City")
-                  Text("\(Image(systemName: "airplane.circle.fill")) 14500руб")
-                }
-                .padding()
-              }
-            }
-          }
+        VStack {
+          Spacer()
+          Text("Тут покупают дешевые авиабилеты")
+            .font(.title.bold())
+            .foregroundColor(Color.white)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal)
+            .padding(.bottom, 30)
         }
-        .ignoresSafeArea()
-        Button("Больше жарких билетов") {
-          
-        }
-        .buttonStyle(.glass)
-        .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.bottom, 10)
       }
     }
-    .cornerRadius(20)
-    .padding()
+    .frame(height: 150)
+  }
+  
+  func interpolate(from: CGFloat, to: CGFloat, progress: CGFloat) -> CGFloat {
+    return from + (to - from) * progress
   }
 }
 
-struct WeekendFlight: View {
-  var body: some View {
-    ZStack {
-      LinearGradient(
-        colors: [Color.blue],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing)
-      VStack {
-        Text("Куда улетель на выходные")
-          .font(.system(size: 20, design: .serif))
-          .fontWeight(.bold)
-          .foregroundColor(.black)
-          .padding(.top, 10)
-       
-        
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack {
-            ForEach(0..<50) { item in
-              ZStack {
-                Rectangle()
-                  .fill(Color.white)
-                  .cornerRadius(20)
-                HStack {
-                  Image(systemName: "photo.artframe")
-                    .resizable()
-                    .frame(width: 90, height: 90)
-                  Text("Name")
-                  Text("City")
-                  Text("\(Image(systemName: "airplane.circle.fill")) 14500руб")
-                }
-                .padding()
-              }
-            }
-          }
-        }
-        .ignoresSafeArea()
-        
-        Button("Больше жарких билетов") {
-          
-        }
-        .buttonStyle(.glass)
-        .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.bottom, 10)
-      }
-    }
-    .cornerRadius(20)
-    .padding()
+struct SearchBarOffsetKey: PreferenceKey {
+  static var defaultValue: CGFloat = 0
+  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+    value = nextValue()
   }
 }
-
 
 #Preview {
   MainView()
 }
 
 
+//#Preview {
+//  TransformingView()
+//}
 
-
+//struct TransformingView: View {
+//  @State private var progress: CGFloat = 0
+//
+//  var body: some View {
+//    ZStack {
+//      // Анимируемый контейнер
+//      RoundedRectangle(cornerRadius: 20 * (1 - progress * 0.4))
+//        .fill(Color.blue)
+//        .frame(height: 150 * (1 - progress * 0.67))
+//
+//      // Контент
+//      if progress < 0.7 {
+//        VStack {
+//          Text("Поле 1")
+//          Divider()//.opacity(1 - progress * 2)
+//          Text("Поле 2").opacity(1 - progress)
+//        }
+//      } else {
+//        Text("Объединенный текст")
+//      }
+//    }
+//    .animation(.spring(), value: progress)
+//    .gesture(
+//      DragGesture()
+//        .onChanged { value in
+//          progress = min(max(-value.translation.height / 100, 0), 1)
+//        }
+//    )
+//  }
+//}
