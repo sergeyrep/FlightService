@@ -32,21 +32,23 @@ struct FlightView: View {
   private var originFields: some View {
       datePickers
       cityField(
-        title: "От куда летим",
+        title: "От куда",
         icon: "airplane.departure",
         text: $viewModel.origin,
         suggestions: viewModel.suggestionsOrigin,
-        field: .origin
+        field: .origin,
+        onSelect: viewModel.selectOrigin
       )
   }
   
   private var destinationFields: some View {
     cityField(
-      title: "Куда летим",
+      title: "Куда",
       icon: "airplane.arrival",
       text: $viewModel.destination,
       suggestions: viewModel.suggestionsDestination,
-      field: .destination
+      field: .destination,
+      onSelect: viewModel.selectDestination
     )
   }
 
@@ -68,64 +70,29 @@ struct FlightView: View {
     }
   }
 
-//  @ViewBuilder
-//  private func ifFocused(for field: SearchField) -> some View {
-//    switch field {
-//    case .origin:
-//      if focusedField == .origin && !viewModel.suggestionsOrigin.isEmpty {
-//        SuggestionsList(
-//          suggestions: viewModel.suggestionsOrigin,
-//          onSelect: { suggestion in
-//            viewModel.origin = suggestion.code
-//            viewModel.suggestionsOrigin = []
-//            focusedField = nil
-//          }
-//        )
-//      }
-//    case .destination:
-//      if focusedField == .destination && !viewModel.suggestionsDestination.isEmpty {
-//        SuggestionsList(
-//          suggestions: viewModel.suggestionsDestination,
-//          onSelect: { suggestion in
-//            viewModel.destination = suggestion.code
-//            viewModel.suggestionsDestination = []
-//            focusedField = nil
-//          }
-//        )
-//      }
-//    case .none:
-//      EmptyView()
-//    }
-//  }
-
+  @ViewBuilder
   private func cityField(
     title: String,
     icon: String,
     text: Binding<String>,
     suggestions: [CitySuggestion],
-    field: SearchField
+    field: SearchField,
+    onSelect: @escaping (CitySuggestion) -> Void
   ) -> some View {
-    VStack(alignment: .leading, spacing: 8) {
-      HStack {
-        Image(systemName: icon)
-          .foregroundColor(.blue)
-        Text(title)
-          .font(.subheadline)
-          .foregroundColor(.secondary)
-      }
-      TextField("какойто текст", text: text)
-        .focused($focusedField, equals: field)
-        .textFieldStyle(.roundedBorder)
-      if focusedField == field && !suggestions.isEmpty {
-        SuggestionsList(
-          suggestions: suggestions,
-          onSelect: { suggestion in
-            text.wrappedValue = suggestion.code
-            viewModel.suggestionsDestination = []
-            focusedField = nil
-          }
-        )
-      }
+    
+    TextField(title, text: text)
+      .focused($focusedField, equals: field)
+      .textFieldStyle(.roundedBorder)
+    if focusedField == field && !suggestions.isEmpty {
+      SuggestionsList(
+        suggestions: suggestions,
+        onSelect: { suggestion in
+          text.wrappedValue = suggestion.code
+          viewModel.suggestionsDestination = []
+          focusedField = nil
+          onSelect(suggestion)
+        }
+      )
     }
   }
 

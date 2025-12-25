@@ -11,10 +11,13 @@ enum NetworkServiceError: Error {
   case decodingError
   case badURL
   case badResponse
+  case badResponseFoto
+  case urlSessionFotoFaild
 }
 
 protocol NetworkServiceProtocol {
   func fetchData<T: Decodable>(_ endpoint: EndpointProtocol, baseURL: String) async throws -> T
+  func fetchFoto(_ endpoint: EndpointProtocol, baseURL: String) async throws -> Data
 }
 
 final class NetworkService: NetworkServiceProtocol {
@@ -23,6 +26,25 @@ final class NetworkService: NetworkServiceProtocol {
   
   init(apiKey: String = "37442fdbe554e59b50d7db0d8a59905b") {
     self.apiKey = apiKey
+  }
+  
+  func fetchFoto(_ endpoint: EndpointProtocol, baseURL: String) async throws -> Data {
+    
+    let request = try buildRequest(endpoint: endpoint, baseUrl: baseURL)
+    
+    do {
+      let (data, response) = try await URLSession.shared.data(for: request)
+      
+      guard let httpResponse = response as? HTTPURLResponse,
+            (200..<300).contains(httpResponse.statusCode) else {
+        throw NetworkServiceError.badResponseFoto
+      }
+      
+      return data
+      
+    } catch {
+      throw NetworkServiceError.urlSessionFotoFaild
+    }
   }
   
   func fetchData<T: Decodable>(_ endpoint: EndpointProtocol, baseURL: String) async throws -> T {
