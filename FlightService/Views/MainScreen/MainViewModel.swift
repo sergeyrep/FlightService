@@ -15,6 +15,17 @@ struct FlightSearchData {
 
 final class MainViewModel: ObservableObject {
   
+  //для определения локации
+  @Published var cities: [UserIata] = []
+  @Published var currentCity: UserIata? {
+    didSet {
+      if searchData.origin.isEmpty, let cityName = currentCity?.name {
+        searchData.origin = cityName
+      }
+      //searchData.origin = currentCity?.name ?? ""
+    }
+  }
+   
   @Published var searchData = FlightSearchData()
   @Published var focusedField: FocusField?
   @Published var showFlightResults = false
@@ -25,6 +36,8 @@ final class MainViewModel: ObservableObject {
   
   private let collapseThreshold: CGFloat = 0.8
   private let animationDuration: Double = 0.3
+  
+  let networkService: DefenitionLocationServiceProtocol
   
   var shadowRadius: CGFloat {
     interpolate(from: 4, to: 8, progress: scrollProgress)
@@ -54,7 +67,34 @@ final class MainViewModel: ObservableObject {
     interpolate(from: 110, to: 60, progress: scrollProgress)
   }
   
+  init(networkService: DefenitionLocationServiceProtocol = DefenitionLocationService()) {
+    self.networkService = networkService
+  }
+  
   private func interpolate(from: CGFloat, to: CGFloat, progress: CGFloat) -> CGFloat {
     from + (to - from) * min(max(progress, 0), 1)
   }
 }
+
+extension MainViewModel {
+  
+  func defenitionLocale() async {
+   
+    do {
+      let response = try await networkService.sendLocation()
+      //self.cities = response
+      self.currentCity = response
+    } catch {
+      print("no locale")
+      currentCity = UserIata(
+        iata: "MOW",
+        name: "Москва",
+        countryName: "RU",
+        coordinates: nil
+      )
+    }
+  }
+}
+
+
+

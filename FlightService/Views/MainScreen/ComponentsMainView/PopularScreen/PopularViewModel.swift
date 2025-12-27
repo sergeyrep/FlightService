@@ -11,13 +11,15 @@ import UIKit
 
 final class PopularViewModel: ObservableObject {
   
-  //@Published var foto: UIImage?
   @Published var popularDirections: [PopularDirectionsModel] = []
+  @Published var isLoading: Bool = false
   
   //пробую реализовать автозамену кода иата на название города
   @Published var popularDirectionsNameCity: [CitySuggestion] = []
   @Published var cityNames: [String: String] = [:]
+  
   private var cancellables = Set<AnyCancellable>()
+  private var photoURLCache: [String: String] = [:]
   
   let networkServiceSearchCityIata: SearchIATAServiceProtocol
   
@@ -40,6 +42,10 @@ final class PopularViewModel: ObservableObject {
   
   @MainActor
   func loadPopularDirections() async {
+    
+    isLoading = true
+    defer { isLoading = false }
+    
     do {
       let response = try await networkServiceCurency.sendPopularDirections(
         origin: "MOW",
@@ -54,24 +60,15 @@ final class PopularViewModel: ObservableObject {
     }
   }
   
-//  func loadCityFoto(for cityCode: String) async {
-//    
-//    async let fotoTask = getFoto(cityCode: cityCode)
-//    
-//    do {
-//      let foto = try await fotoTask
-//      self.foto = foto
-//    } catch {
-//      print("no load foto")
-//    }
-//  }
-//  
-//  func getFoto(cityCode: String) async throws -> UIImage {
-//    try await networkServiceFoto.sendRequestForCityFoto(cityCode: cityCode)
-//  }
-  
   func loadFoto(cityCode: String) -> String {
-    "https://photo.hotellook.com/static/cities/960x720/\(cityCode).jpg"
+    
+    if let cashed = photoURLCache[cityCode] {
+      return cashed
+    }
+    
+    let url = "https://photo.hotellook.com/static/cities/960x720/\(cityCode).jpg"
+    photoURLCache[cityCode] = url
+    return url
   }
 }
 
@@ -80,8 +77,13 @@ extension PopularViewModel {
   
   @MainActor
   private func loadCityNames(for directions: [PopularDirectionsModel]) async {
-    for direction in directions {
-      await loadCityName(for: direction.destination)
+    //все запросы параллельно
+    await withTaskGroup(of: Void.self) { group in
+      for direction in directions {
+        group.addTask {
+          await self.loadCityName(for: direction.destination)
+        }
+      }
     }
   }
   
@@ -91,7 +93,9 @@ extension PopularViewModel {
     if cityNames[cityCode] != nil { return }
     
     do {
-      let result = try await networkServiceSearchCityIata.searchCity(query: cityCode)
+      
+        let result = try await networkServiceSearchCityIata.searchCity(query: cityCode)
+      
       
       // Берем первый результат (наиболее релевантный)
       if let firstResult = result.first {

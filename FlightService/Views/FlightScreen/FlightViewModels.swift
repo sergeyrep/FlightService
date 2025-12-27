@@ -14,6 +14,7 @@ enum SearchField {
 }
 
 final class FlightViewModel: ObservableObject {
+  
   @Published var flights: [Flight] = []
   @Published var suggestionsOrigin: [CitySuggestion] = []
   @Published var suggestionsDestination: [CitySuggestion] = []
@@ -23,11 +24,11 @@ final class FlightViewModel: ObservableObject {
   @Published var departDate = Date()
   @Published var returnDate: Date? = nil
   @Published var isOneWay: Bool = true
-  
-  private var originIata: String = ""
-  private var destinationIata: String = ""
-  
+  @Published var isLoading: Bool = false
   @Published var activeSearchField: SearchField = .none
+  
+  private(set) var originIata: String = ""
+  private(set) var destinationIata: String = ""
   
   private var cancellables = Set<AnyCancellable>()
   
@@ -47,6 +48,16 @@ final class FlightViewModel: ObservableObject {
   
   func loadFlights() async {
     
+    guard !origin.isEmpty, !destination.isEmpty else {
+      print("code iata is empty")
+      return
+    }
+    
+    await MainActor.run {
+      isLoading = true
+    }
+    defer { isLoading = false }
+    
     do {
       let response = try await networkService.sendRequestForFlight(
         origin: originIata,
@@ -55,7 +66,9 @@ final class FlightViewModel: ObservableObject {
         returnDate: isOneWay ? nil : returnDate
       )
       
-      self.flights = response
+      await MainActor.run {
+        self.flights = response
+      }
       
     } catch {
       print("❌ Error: \(error)")
@@ -79,7 +92,9 @@ extension FlightViewModel {
 
 extension FlightViewModel {
   func searchCities(query: String, for field: SearchField) {
+    
     Task {
+      
       do {
         let result = try await autocompleteCity.searchCity(query: query)
         
@@ -127,4 +142,5 @@ extension Date {
     Calendar.current.date(byAdding: .day, value: days, to: self) ?? self
   }
 }
+
 

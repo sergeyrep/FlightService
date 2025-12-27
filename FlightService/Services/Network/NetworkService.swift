@@ -18,6 +18,7 @@ enum NetworkServiceError: Error {
 protocol NetworkServiceProtocol {
   func fetchData<T: Decodable>(_ endpoint: EndpointProtocol, baseURL: String) async throws -> T
   func fetchFoto(_ endpoint: EndpointProtocol, baseURL: String) async throws -> Data
+  func parseJSONPResponse<T: Decodable>(_ data: Data) throws -> T
 }
 
 final class NetworkService: NetworkServiceProtocol {
@@ -61,6 +62,11 @@ final class NetworkService: NetworkServiceProtocol {
         throw NetworkServiceError.badResponse
       }
       
+      // Для fetchLocation нужна специальная обработка JSONP
+      if endpoint.path.contains("whereami") {
+        return try parseJSONPResponse(data) as T
+      }
+      
       do {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -99,23 +105,29 @@ final class NetworkService: NetworkServiceProtocol {
   }
 }
 
-//  func buildQueryItems(endpoint: EndpointProtocol) -> String? {
-//    var params: [String: Any] = endpoint.queryItems
-//    params["token"] = apiKey
-//    var components = URLComponents()
-//    components.queryItems = params.map { key, value in
-//      URLQueryItem(name: key, value: "\(value)")
-//    }
-//    return components.percentEncodedQuery
-//  }
-
-
-//struct URLEncoder {
-//  func encode(params: [String: Any]) -> String? {
-//    var components = URLComponents()
-//    components.queryItems = params.map { key, value in
-//      URLQueryItem(name: key, value: "\(value)")
-//    }
-//    return components.percentEncodedQuery
-//  }
-//}
+extension NetworkService {
+  func parseJSONPResponse<T: Decodable>(_ data: Data) throws -> T {
+    guard let responseString = String(data: data, encoding: .utf8) else {
+      throw NetworkServiceError.decodingError
+    }
+    
+    print("📥 Raw response: \(responseString.prefix(200))...")
+    
+    // Проверяем формат JSONP: useriata({...})
+    guard responseString.hasPrefix("useriata("),
+          responseString.hasSuffix(")") else {
+      throw NetworkServiceError.decodingError
+    }
+    
+    // Извлекаем JSON из JSONP
+    let jsonStartIndex = responseString.index(responseString.startIndex, offsetBy: 9) // "useriata(".count
+    let jsonEndIndex = responseString.index(responseString.endIndex, offsetBy: -1)
+    let jsonString = String(responseString[jsonStartIndex..<jsonEndIndex])
+    
+    print("📦 JSON extracted: \(jsonString)")
+    
+    // Декодируем
+    let decoder = JSONDecoder()
+    return try decoder.decode(T.self, from: Data(jsonString.utf8))
+  }
+}

@@ -19,7 +19,7 @@ struct MainView: View {
             progress: viewModel.scrollProgress
           )
           .background(animationSearchBar())
-        ) {
+        ) {          
           PopularDirectionsView(viewModel: .init())
           InterestingContent()
           SalesFlight()
@@ -29,16 +29,17 @@ struct MainView: View {
     }
     .background(.gray.opacity(0.3))
     .ignoresSafeArea()
-    //    .onPreferenceChange(ScrollOffsetKey.self) { value in
-    //      print("Offset = \(value)")
-    //      viewModel.scrollProgress = value
-    //    }
     .sheet(isPresented: $viewModel.showFlightResults) {
       FlightView(viewModel: .init())
     }
     .onChange(of: isFocused) { _, newValue in
       if newValue == .origin || newValue == .destination {
         viewModel.showFlightResults = true
+      }
+    }
+    .onAppear {
+      Task {
+        await viewModel.defenitionLocale()
       }
     }
   }
@@ -164,59 +165,3 @@ struct MainSearchBarView: View {
   }
 }
 
-
-//  private var header: some View {
-//    ZStack {
-//      headScrols
-//      searchBar
-//    }
-//    .padding(.bottom, 100)
-//  }
-
-// @ViewBuilder
-//  private var searchBar: some View {
-//    ZStack {
-//      RoundedRectangle(cornerRadius: 20)
-//        .fill(Color.white)
-//        .shadow(
-//          color: .black.opacity(interpolate(from: 0.3, to: 0.1, progress: progress)),
-//          radius: interpolate(from: 4, to: 9, progress: progress),
-//          x: 0,
-//          y: interpolate(from: 2, to: 4, progress: progress)
-//        )
-//      ZStack {
-//        RoundedRectangle(cornerRadius: 20)
-//          .fill(Color.gray.opacity(0.3))
-//        HStack {
-//          if progress < 0.8 {
-//            Image(systemName: "magnifyingglass")
-//              .foregroundColor(.gray)
-//              .font(.system(size: 20))
-//              .padding(.leading)
-//            VStack(spacing: 0) {
-//              TextField("", text: $text)
-//                .focused($isFocused, equals: .origin)
-//                .opacity(1.0 - progress)
-//              Divider()
-//                .padding(.vertical)
-//                .opacity(1.0 - progress)
-//              TextField("", text: $text2)
-//            }
-//            .opacity(1.0 - progress * 0.5)
-//            .frame(height: 50 * (1.75 - progress))
-//          } else {
-//            HStack {
-//              Image(systemName: "magnifyingglass")
-//              TextField("", text: $text2)
-//                .focused($isFocused, equals: .destination)
-//                .frame(height: 50)
-//            }
-//            .opacity((progress - 0.7) * 3.3)
-//          }
-//        }
-//      }
-//      .padding(EdgeInsets(top: 60, leading: 10 * (1.5 - progress), bottom: 5 * (1 - progress), trailing: 10 * (1.5 - progress)))
-//    }
-//    .padding(.horizontal, 20 - (20 * progress))
-//    .animation(.spring(response: 0.3), value: progress)
-//  }

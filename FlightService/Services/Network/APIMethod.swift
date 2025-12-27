@@ -12,6 +12,7 @@ enum ApiMethod: EndpointProtocol {
   case fetchFlight(origin: String, destination: String, departDate: String, returnDate: String?)
   case fetchFotoCity(cityCode: String)
   case fetchPopularDirections(origin: String, currency: String)
+  case fetchLocation
   
   var httpMethod: HTTPMethod {
     switch self {
@@ -20,6 +21,8 @@ enum ApiMethod: EndpointProtocol {
     case .fetchFotoCity:
       return .get
     case .fetchPopularDirections:
+      return .get
+    case .fetchLocation:
       return .get
     }
   }
@@ -32,6 +35,8 @@ enum ApiMethod: EndpointProtocol {
       return "/static/cities/960x720/\(cityCode).jpg"
     case .fetchPopularDirections:
       return "/v1/city-directions"
+    case .fetchLocation:
+      return "/whereami" //?locale=ru&callback=useriata
     }
   }
   
@@ -55,6 +60,12 @@ enum ApiMethod: EndpointProtocol {
       
     case let .fetchPopularDirections(origin, currency):
       return ["origin": origin.uppercased(), "currency": currency]
+      
+    case .fetchLocation:
+      return [
+        "locale": "ru",
+        "callback": "useriata"
+      ]
     }
   }
 }
