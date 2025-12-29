@@ -37,6 +37,8 @@ struct FotoCityView: View {
         }
       }
       
+      Text("из \(direction.origin)")
+      
       Text(cityName.isEmpty ? direction.destination : cityName)
         .font(.caption)
         .fontWeight(.semibold)

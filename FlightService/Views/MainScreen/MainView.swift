@@ -6,6 +6,8 @@ struct MainView: View {
   @StateObject var viewModel: MainViewModel
   @FocusState private var isFocused: FocusField?
   
+  @State private var popularViewModel: PopularViewModel?
+  
   var body: some View {
     ScrollView {
       LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
@@ -19,8 +21,14 @@ struct MainView: View {
             progress: viewModel.scrollProgress
           )
           .background(animationSearchBar())
-        ) {          
-          PopularDirectionsView(viewModel: .init())
+        ) {
+          if let popular = popularViewModel {
+            PopularDirectionsView(viewModel: popular)
+              .task {
+                await popular.loadDirections()
+              }
+          }
+          
           InterestingContent()
           SalesFlight()
           WeekendFlight()
@@ -40,6 +48,10 @@ struct MainView: View {
     .onAppear {
       Task {
         await viewModel.defenitionLocale()
+        
+        popularViewModel = PopularViewModel(
+          currentCity: viewModel.currentCity?.iata ?? "MOW"
+        )
       }
     }
   }

@@ -31,11 +31,11 @@ struct AllPopularDirectionsView: View {
               )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding()
+            .padding(.horizontal)
           }
-          
         }
       }
+      .padding(.top)
     }
   }
 }

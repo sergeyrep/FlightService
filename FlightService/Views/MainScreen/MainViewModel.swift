@@ -16,7 +16,7 @@ struct FlightSearchData {
 final class MainViewModel: ObservableObject {
   
   //для определения локации
-  @Published var cities: [UserIata] = []
+  //@Published var popCodeIata: String?
   @Published var currentCity: UserIata? {
     didSet {
       if searchData.origin.isEmpty, let cityName = currentCity?.name {

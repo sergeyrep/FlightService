@@ -18,6 +18,8 @@ final class PopularViewModel: ObservableObject {
   @Published var popularDirectionsNameCity: [CitySuggestion] = []
   @Published var cityNames: [String: String] = [:]
   
+  private var currentCity: String
+  
   private var cancellables = Set<AnyCancellable>()
   private var photoURLCache: [String: String] = [:]
   
@@ -27,14 +29,23 @@ final class PopularViewModel: ObservableObject {
   let networkServiceCurency: PopularDirectionsServiceProtocol
   
   init(
+    currentCity: String = "MOW",
     networkServiceFoto: CityFotoServiceProtocol = CityFotoServices(),
     networkServiceCurency: PopularDirectionsServiceProtocol = PopularDirectionsService(),
     networkServiceSearchCityIata: SearchIATAServiceProtocol = SearchIATAService()
   ) {
+    self.currentCity = currentCity
     self.networkServiceFoto = networkServiceFoto
     self.networkServiceCurency = networkServiceCurency
     self.networkServiceSearchCityIata = networkServiceSearchCityIata
     
+//    Task {
+//      await loadPopularDirections()
+//    }
+  }
+  
+  //метод загрузки
+  func loadDirections() async {
     Task {
       await loadPopularDirections()
     }
@@ -48,7 +59,7 @@ final class PopularViewModel: ObservableObject {
     
     do {
       let response = try await networkServiceCurency.sendPopularDirections(
-        origin: "MOW",
+        origin: currentCity,
         currency: "rub"
       )
       self.popularDirections = response
@@ -112,5 +123,15 @@ extension PopularViewModel {
   
   func getCityName(for cityCode: String) -> String {
     return cityNames[cityCode] ?? cityCode
+  }
+}
+
+extension PopularViewModel {
+  func updateCurrentCity(_ cityCode: String) {
+    guard cityCode != currentCity else { return }
+    currentCity = cityCode
+    Task {
+      await loadPopularDirections()
+    }
   }
 }
