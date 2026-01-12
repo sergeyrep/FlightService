@@ -46,6 +46,34 @@ final class FlightViewModel: ObservableObject {
     sinkSearchDestination()
   }
   
+  func loadAllFlights() async {
+    guard !origin.isEmpty else {
+      print("от куда летим")
+      return
+    }
+    
+    await MainActor.run {
+      isLoading = true
+    }
+    defer { isLoading = false }
+    
+    do {
+      let response = try await networkService.sendRequestForFlight(
+        origin: originIata,
+        destination: destinationIata,
+        departDate: departDate,
+        returnDate: isOneWay ? nil : returnDate
+      )
+      
+      await MainActor.run {
+        self.flights = response
+      }
+      
+    } catch {
+      print("❌ Error: \(error)")
+    }
+  }
+  
   func loadFlights() async {
     
     guard !origin.isEmpty, !destination.isEmpty else {

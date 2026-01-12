@@ -10,80 +10,109 @@ import SwiftUI
 struct FlightView: View {
   @StateObject var viewModel: FlightViewModel
   @FocusState private var focusedField: SearchField?
-
+  
   var body: some View {
-    ScrollView {
-      LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-        originFields        
-        Section(header: destinationFields) {
-          toogleOneWay
-          Button("Show flight") {
-            Task {
-              await viewModel.loadFlights()
-            }
-          }
-          cardFlight
+    NavigationStack {
+      ScrollView {
+        VStack {
+          originFields
+          Divider()
+          destinationFields
         }
+        .background(Color(.white))
+        .cornerRadius(20)
+        .padding()
+        
+        
+        datePickers
+        
+        ScrollView(.horizontal) {
+          
+        }
+        
+        Button("Показать рейсы") {
+          Task {
+            await viewModel.loadFlights()
+          }
+        }
+        .foregroundStyle(.black)
+        .padding(10)
+        .background(.blue.opacity(0.3))
+        .cornerRadius(20)
+        
+        cardFlight
       }
+      .background(.gray.opacity(0.3))
     }
   }
-
+  
   @ViewBuilder
   private var originFields: some View {
-      datePickers
-      cityField(
-        title: "От куда",
-        icon: "airplane.departure",
-        text: $viewModel.origin,
-        suggestions: viewModel.suggestionsOrigin,
-        field: .origin,
-        onSelect: viewModel.selectOrigin
-      )
+    //datePickers
+    cityField(
+      title: "От куда",
+      icon: focusedField == .origin ? .magnifyingGlass : .origin,
+      text: $viewModel.origin,
+      suggestions: viewModel.suggestionsOrigin,
+      field: .origin,
+      onSelect: viewModel.selectOrigin
+    )
   }
   
   private var destinationFields: some View {
     cityField(
       title: "Куда",
-      icon: "airplane.arrival",
+      icon: focusedField == .destination ? .magnifyingGlass : .destination,
       text: $viewModel.destination,
       suggestions: viewModel.suggestionsDestination,
       field: .destination,
       onSelect: viewModel.selectDestination
     )
   }
-
+  
   private var toogleOneWay: some View {
-    Toggle(viewModel.isOneWay ? "В одну сторону" :"Туда-Обратно", isOn: $viewModel.isOneWay)
+    Toggle(viewModel.isOneWay ? "Туда-Обратно" : "В одну сторону", isOn: $viewModel.isOneWay)
       .toggleStyle(.button)
-      .padding()
   }
   
   private var cardFlight: some View {
     ForEach(viewModel.flights) { flight in
-      VStack(alignment: .leading) {
-        Text(flight.airline)
-        Text("Time: \(flight.departureTime)")
-        Text("Price: \(flight.price) \(flight.currency.uppercased())")
-        Text("\(flight.origin) --> \( flight.destination)")
-        Text("Return: \(String(describing: flight.returnTime))")
+      NavigationLink {
+        DetailFlightView()
+      } label: {
+        VStack(alignment: .leading) {
+          Text(flight.airline)
+          Text("Time: \(flight.departureTime)")
+          Text("Price: \(flight.price) \(flight.currency.uppercased())")
+          Text("\(flight.origin) --> \( flight.destination)")
+          Text("Return: \(String(describing: flight.returnTime))")
+        }
+        .padding()
+        .background(.white)
+        .cornerRadius(20)
       }
     }
   }
-
+  
   @ViewBuilder
   private func cityField(
     title: String,
-    icon: String,
+    icon: IconField,
     text: Binding<String>,
     suggestions: [CitySuggestion],
     field: SearchField,
     onSelect: @escaping (CitySuggestion) -> Void
   ) -> some View {
+    HStack {
+      Image(systemName: icon.rawValue)
+        .padding(8)
+      TextField(title, text: text)
+        .focused($focusedField, equals: field)
+        .padding(10)
+    }
     
-    TextField(title, text: text)
-      .focused($focusedField, equals: field)
-      .textFieldStyle(.roundedBorder)
     if focusedField == field && !suggestions.isEmpty {
+     
       SuggestionsList(
         suggestions: suggestions,
         onSelect: { suggestion in
@@ -95,11 +124,11 @@ struct FlightView: View {
       )
     }
   }
-
+  
   private var datePickers: some View {
-    Section("Dates") {
+    VStack(alignment: .leading, spacing: 0) {
       DatePicker(
-        "Departure date",
+        "Дата вылета",
         selection: $viewModel.departDate,
         in: Date()...,
         displayedComponents: .date
@@ -109,12 +138,13 @@ struct FlightView: View {
           await viewModel.loadFlights()
         }
       }
+      toogleOneWay
       if !viewModel.isOneWay {
         DatePicker(
-          "Return date",
+          "Дата возврата",
           selection: Binding(
             get: { viewModel.returnDate ?? Date().addingTimeInterval(86400 * 7) },
-
+            
             set: { viewModel.returnDate = $0 }
           ),
           in: viewModel.departDate...,
@@ -127,7 +157,17 @@ struct FlightView: View {
         }
       }
     }
+    .padding(8)
+    .background(.white)
+    .cornerRadius(20)
+    .padding()
   }
+}
+
+enum IconField: String {
+  case origin = "airplane.departure"
+  case destination = "airplane.arrival"
+  case magnifyingGlass = "magnifyingglass"
 }
 
 #Preview {
