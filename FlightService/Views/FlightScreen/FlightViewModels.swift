@@ -27,6 +27,15 @@ final class FlightViewModel: ObservableObject {
   @Published var isLoading: Bool = false
   @Published var activeSearchField: SearchField = .none
   
+  @Published var currentLocation: UserIata? {
+    didSet {
+      if origin.isEmpty, let cityName = currentLocation?.name {
+        origin = cityName
+      }
+    }
+  }
+  
+  
   private(set) var originIata: String = ""
   private(set) var destinationIata: String = ""
   
@@ -34,16 +43,22 @@ final class FlightViewModel: ObservableObject {
   
   let networkService: FlightServiceProtocol
   let autocompleteCity: SearchIATAServiceProtocol
+  let defenitionLocation: DefenitionLocationServiceProtocol
   
   init(
     networkService: FlightServiceProtocol = FlightService(),
-    autocompletionCity: SearchIATAServiceProtocol = SearchIATAService()
+    autocompletionCity: SearchIATAServiceProtocol = SearchIATAService(),
+    defenitionLocation: DefenitionLocationServiceProtocol = DefenitionLocationService()
   ) {
     self.networkService = networkService
     self.autocompleteCity = autocompletionCity
+    self.defenitionLocation = defenitionLocation
     
     sinkSearchOrigin()
     sinkSearchDestination()
+    Task {
+      await defenitionLocale()
+    }
   }
   
   func loadAllFlights() async {
@@ -171,4 +186,23 @@ extension Date {
   }
 }
 
+extension FlightViewModel {
+  
+  func defenitionLocale() async {
+   
+    do {
+      let response = try await defenitionLocation.sendLocation()
+      //self.cities = response
+      self.currentLocation = response
+    } catch {
+      print("no locale")
+      currentLocation = UserIata(
+        iata: "MOW",
+        name: "Москва",
+        countryName: "RU",
+        coordinates: nil
+      )
+    }
+  }
+}
 

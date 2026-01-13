@@ -48,9 +48,8 @@ struct FlightView: View {
   
   @ViewBuilder
   private var originFields: some View {
-    //datePickers
     cityField(
-      title: "От куда",
+      title: "Откуда",
       icon: focusedField == .origin ? .magnifyingGlass : .origin,
       text: $viewModel.origin,
       suggestions: viewModel.suggestionsOrigin,
@@ -59,15 +58,28 @@ struct FlightView: View {
     )
   }
   
+  @ViewBuilder
   private var destinationFields: some View {
-    cityField(
-      title: "Куда",
-      icon: focusedField == .destination ? .magnifyingGlass : .destination,
-      text: $viewModel.destination,
-      suggestions: viewModel.suggestionsDestination,
-      field: .destination,
-      onSelect: viewModel.selectDestination
-    )
+    HStack {
+      cityField(
+        title: "Куда",
+        icon: focusedField == .destination ? .magnifyingGlass : .destination,
+        text: $viewModel.destination,
+        suggestions: viewModel.suggestionsDestination,
+        field: .destination,
+        onSelect: viewModel.selectDestination
+      )
+      Button("Не важно куда") {
+        Task {
+          await viewModel.loadAllFlights()
+        }
+      }
+      .font(.system(size: 10))
+      .padding(3)
+      .background(.blue.opacity(0.3))
+      .cornerRadius(20)
+      .padding(3)
+    }
   }
   
   private var toogleOneWay: some View {
