@@ -23,7 +23,6 @@ struct FlightView: View {
         .cornerRadius(20)
         .padding()
         
-        
         datePickers
         
         ScrollView(.horizontal) {
@@ -124,7 +123,6 @@ struct FlightView: View {
     }
     
     if focusedField == field && !suggestions.isEmpty {
-     
       SuggestionsList(
         suggestions: suggestions,
         onSelect: { suggestion in

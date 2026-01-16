@@ -8,15 +8,25 @@
 import Foundation
 
 protocol DefenitionLocationServiceProtocol {
+  
+ //тут добавим переменную
+  var currentLocation: UserIata? { get }
+  
   func sendLocation() async throws -> UserIata
 }
 
 final class DefenitionLocationService: DefenitionLocationServiceProtocol {
   
+  static let shared: DefenitionLocationServiceProtocol = DefenitionLocationService()
+  
   private var networkService: NetworkServiceProtocol
   private let baseURL: String = "https://www.travelpayouts.com"
   
-  init(networkService: NetworkServiceProtocol = NetworkService()) {
+  var currentLocation: UserIata?
+  
+  private init(
+    networkService: NetworkServiceProtocol = NetworkService()
+  ) {
     self.networkService = networkService
   }
   
@@ -27,9 +37,16 @@ final class DefenitionLocationService: DefenitionLocationServiceProtocol {
     do {
       let response: UserIata = try await networkService.fetchData(endpoint, baseURL: baseURL)
       //let result = response.convertUserIata()
+      currentLocation = response
       return response
     } catch {
       print("invalid response service")
+      currentLocation = UserIata(
+        iata: "MOW",
+        name: "Москва",
+        countryName: "RU",
+        coordinates: nil
+      )
       throw error
     }
   }

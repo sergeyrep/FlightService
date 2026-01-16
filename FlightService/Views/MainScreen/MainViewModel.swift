@@ -37,7 +37,7 @@ final class MainViewModel: ObservableObject {
   private let collapseThreshold: CGFloat = 0.8
   private let animationDuration: Double = 0.3
   
-  let networkService: DefenitionLocationServiceProtocol
+  let networkService: DefenitionLocationServiceProtocol = DefenitionLocationService.shared
   
   var shadowRadius: CGFloat {
     interpolate(from: 4, to: 8, progress: scrollProgress)
@@ -67,8 +67,11 @@ final class MainViewModel: ObservableObject {
     interpolate(from: 110, to: 60, progress: scrollProgress)
   }
   
-  init(networkService: DefenitionLocationServiceProtocol = DefenitionLocationService()) {
-    self.networkService = networkService
+  init() {
+    Task {
+      await defenitionLocale()
+    }
+    //self.networkService = networkService
   }
   
   private func interpolate(from: CGFloat, to: CGFloat, progress: CGFloat) -> CGFloat {
@@ -78,20 +81,32 @@ final class MainViewModel: ObservableObject {
 
 extension MainViewModel {
   
+//  func newCurrentLocation() async {
+//    do {
+//      let response = try await networkService.sendLocation()
+//    } catch {
+//      print("newCurrentLocation invalid")
+//    }
+//  }
+  
   func defenitionLocale() async {
    
     do {
       let response = try await networkService.sendLocation()
       //self.cities = response
-      self.currentCity = response
+      await MainActor.run {
+        self.currentCity = response
+      }
     } catch {
       print("no locale")
-      currentCity = UserIata(
-        iata: "MOW",
-        name: "Москва",
-        countryName: "RU",
-        coordinates: nil
-      )
+      await MainActor.run {
+        currentCity = UserIata(
+          iata: "MOW",
+          name: "Москва",
+          countryName: "RU",
+          coordinates: nil
+        )
+      }
     }
   }
 }

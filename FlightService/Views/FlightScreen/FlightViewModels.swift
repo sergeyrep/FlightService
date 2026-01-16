@@ -15,6 +15,7 @@ enum SearchField {
 
 final class FlightViewModel: ObservableObject {
   
+  //MARK: -Published Properties
   @Published var flights: [Flight] = []
   @Published var suggestionsOrigin: [CitySuggestion] = []
   @Published var suggestionsDestination: [CitySuggestion] = []
@@ -35,30 +36,35 @@ final class FlightViewModel: ObservableObject {
     }
   }
   
-  
+  //MARK: -IATA Codes
   private(set) var originIata: String = ""
   private(set) var destinationIata: String = ""
   
+  //MARK: -Private services
   private var cancellables = Set<AnyCancellable>()
   
+  //MARK: -Services
   let networkService: FlightServiceProtocol
   let autocompleteCity: SearchIATAServiceProtocol
-  let defenitionLocation: DefenitionLocationServiceProtocol
+  let defenitionLocation: DefenitionLocationServiceProtocol = DefenitionLocationService.shared
   
   init(
     networkService: FlightServiceProtocol = FlightService(),
     autocompletionCity: SearchIATAServiceProtocol = SearchIATAService(),
-    defenitionLocation: DefenitionLocationServiceProtocol = DefenitionLocationService()
+    //defenitionLocation: DefenitionLocationServiceProtocol = DefenitionLocationService()
   ) {
     self.networkService = networkService
     self.autocompleteCity = autocompletionCity
-    self.defenitionLocation = defenitionLocation
+    //self.defenitionLocation = defenitionLocation
     
     sinkSearchOrigin()
     sinkSearchDestination()
     Task {
-      await defenitionLocale()
+      await newDefenitionLocale()
     }
+//    Task {
+//      await defenitionLocale()
+//    }
   }
   
   func loadAllFlights() async {
@@ -188,21 +194,29 @@ extension Date {
 
 extension FlightViewModel {
   
-  func defenitionLocale() async {
-   
-    do {
-      let response = try await defenitionLocation.sendLocation()
-      //self.cities = response
-      self.currentLocation = response
-    } catch {
-      print("no locale")
-      currentLocation = UserIata(
-        iata: "MOW",
-        name: "Москва",
-        countryName: "RU",
-        coordinates: nil
-      )
+  func newDefenitionLocale() {
+    
+    if let casheLocation = defenitionLocation.currentLocation {
+      
+      self.currentLocation = casheLocation
     }
   }
+  
+  //  func defenitionLocale() async {
+  //
+  //    do {
+  //      let response = try await defenitionLocation.sendLocation()
+//      //self.cities = response
+//      self.currentLocation = response
+//    } catch {
+//      print("no locale")
+//      currentLocation = UserIata(
+//        iata: "MOW",
+//        name: "Москва",
+//        countryName: "RU",
+//        coordinates: nil
+//      )
+//    }
+//  }
 }
 

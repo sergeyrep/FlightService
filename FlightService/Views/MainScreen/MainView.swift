@@ -6,7 +6,7 @@ struct MainView: View {
   @StateObject var viewModel: MainViewModel
   @FocusState private var isFocused: FocusField?
   
-  @State private var popularViewModel: PopularViewModel?
+  @State private var popularViewModel = PopularViewModel()
   
   var body: some View {
     ScrollView {
@@ -22,13 +22,12 @@ struct MainView: View {
           )
           .background(animationSearchBar())
         ) {
-          if let popular = popularViewModel {
-            PopularDirectionsView(viewModel: popular)
-              .task {
-                await popular.loadDirections()
-              }
-          }
-          
+         
+            PopularDirectionsView(viewModel: popularViewModel)
+//              .task {
+//                await popular.loadDirections()
+//              }
+                  
           InterestingContent()
           SalesFlight()
           WeekendFlight()
@@ -46,13 +45,7 @@ struct MainView: View {
       }
     }
     .onAppear {
-      Task {
-        await viewModel.defenitionLocale()
-        
-        popularViewModel = PopularViewModel(
-          currentCity: viewModel.currentCity?.iata ?? "MOW"
-        )
-      }
+      popularViewModel.loadDirections()
     }
   }
   

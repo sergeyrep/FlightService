@@ -1,10 +1,3 @@
-//
-//  PopularViewModel.swift
-//  FlightService
-//
-//  Created by Сергей on 22.12.2025.
-//
-
 import Foundation
 import Combine
 import UIKit
@@ -14,38 +7,42 @@ final class PopularViewModel: ObservableObject {
   @Published var popularDirections: [PopularDirectionsModel] = []
   @Published var isLoading: Bool = false
   
-  //пробую реализовать автозамену кода иата на название города
   @Published var popularDirectionsNameCity: [CitySuggestion] = []
   @Published var cityNames: [String: String] = [:]
   
-  private var currentCity: String
+  @Published var currentCity: UserIata? {
+    didSet {
+      if let currentIata = currentCity?.iata {
+        currentCityIata = currentIata
+      }
+    }
+  }
+  private var currentCityIata: String = "MOW"
   
   private var cancellables = Set<AnyCancellable>()
   private var photoURLCache: [String: String] = [:]
   
+  //MARK: -NetworcServices
   let networkServiceSearchCityIata: SearchIATAServiceProtocol
+  let networkServiceLocation: DefenitionLocationServiceProtocol = DefenitionLocationService.shared
   
   let networkServiceFoto: CityFotoServiceProtocol
   let networkServiceCurency: PopularDirectionsServiceProtocol
   
   init(
-    currentCity: String = "MOW",
     networkServiceFoto: CityFotoServiceProtocol = CityFotoServices(),
     networkServiceCurency: PopularDirectionsServiceProtocol = PopularDirectionsService(),
     networkServiceSearchCityIata: SearchIATAServiceProtocol = SearchIATAService()
   ) {
-    self.currentCity = currentCity
     self.networkServiceFoto = networkServiceFoto
     self.networkServiceCurency = networkServiceCurency
     self.networkServiceSearchCityIata = networkServiceSearchCityIata
     
-//    Task {
-//      await loadPopularDirections()
-//    }
+    sendLocation()
   }
   
-  //метод загрузки
-  func loadDirections() async {
+  //MARK: -LoadFunc
+  func loadDirections() {
     Task {
       await loadPopularDirections()
     }
@@ -59,7 +56,7 @@ final class PopularViewModel: ObservableObject {
     
     do {
       let response = try await networkServiceCurency.sendPopularDirections(
-        origin: currentCity,
+        origin: currentCityIata,
         currency: "rub"
       )
       self.popularDirections = response
@@ -83,7 +80,7 @@ final class PopularViewModel: ObservableObject {
   }
 }
 
-
+//MARK: -Extension
 extension PopularViewModel {
   
   @MainActor
@@ -127,11 +124,16 @@ extension PopularViewModel {
 }
 
 extension PopularViewModel {
-  func updateCurrentCity(_ cityCode: String) {
-    guard cityCode != currentCity else { return }
-    currentCity = cityCode
-    Task {
-      await loadPopularDirections()
+  
+  func sendLocation() {
+    if let cashedLocation = networkServiceLocation.currentLocation {
+      self.currentCityIata = cashedLocation.iata
+      print("Установлена локация: \(cashedLocation.iata) - \(cashedLocation.name ?? "MOW")")
+      loadDirections()
+    } else {
+      self.currentCityIata = "MOW"
+      print("Используется локация по умолчанию: MOW")
+      loadDirections()
     }
   }
 }
