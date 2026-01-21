@@ -168,3 +168,4 @@ struct MainSearchBarView: View {
   }
 }
 
+//end
