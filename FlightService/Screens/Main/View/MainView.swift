@@ -4,9 +4,9 @@ import SwiftUI
 struct MainView: View {
   
   @StateObject var viewModel: MainViewModel
-  @FocusState private var isFocused: FocusField?
+  //@StateObject var popularViewModel: PopularViewModel
   
-  @State private var popularViewModel = PopularViewModel()
+  @FocusState private var isFocused: FocusField?
   
   var body: some View {
     ScrollView {
@@ -23,7 +23,12 @@ struct MainView: View {
           .background(animationSearchBar())
         ) {
           
-          PopularDirectionsView(viewModel: popularViewModel)
+          PopularDirectionsView(
+            viewModel: .init(
+              mainViewModel: viewModel,
+              isLocationLoaded: viewModel.isLocationLoaded
+            )
+          )
           InterestingContent()
           SalesFlight()
           WeekendFlight()
@@ -42,9 +47,9 @@ struct MainView: View {
         isFocused = .none
       }
     }
-    .onAppear {
-      popularViewModel.loadDirections()
-    }
+//    .onAppear {
+//      popularViewModel.loadDirections()
+//    }
   }
   
   @ViewBuilder
@@ -101,9 +106,9 @@ struct SearchBarOffsetKey: PreferenceKey {
   }
 }
 
-#Preview {
-  MainView(viewModel: .init())
-}
+//#Preview {
+//  MainView(viewModel: .init())
+//}
 
 struct MainSearchBarView: View {
   

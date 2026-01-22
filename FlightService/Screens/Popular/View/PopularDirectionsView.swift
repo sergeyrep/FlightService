@@ -41,7 +41,7 @@ struct PopularDirectionsView: View {
       LazyHStack(spacing: 8) {
         ForEach(viewModel.popularDirections) { direction in
           NavigationLink {
-            DetailPopularFlightView(flight: direction)
+            DetailPopularFlightView(flight: direction, flightName: viewModel.currentCity)
           } label: {
             PhotoCityView(
               direction: direction,
@@ -57,7 +57,7 @@ struct PopularDirectionsView: View {
   }
   
   private var header: some View {
-    Text("Популярные направления")
+    Text("Популярные направления, \(viewModel.popularDirections.count)")
       .font(.system(size: 20, design: .serif))
       .fontWeight(.bold)
       .foregroundColor(.black)
@@ -70,14 +70,19 @@ struct PopularDirectionsView: View {
 struct DetailPopularFlightView: View {
   
   let flight: PopularDirectionsModel
+  let flightName: UserIata?
   
   var body: some View {
-    PhotoCityView(direction: flight, cityName: flight.destination, photoSize: 150, viewModel: .init())
+//    PhotoCityView(direction: flight, cityName: flight.destination, photoSize: 150, viewModel: .init(mainViewModel: <#MainViewModel#>, isLocationLoaded: <#CurrentValueSubject<Bool, Never>#>) )
     Text(flight.origin)
+    Text(flight.destination)
+    if let flightNameTo = flightName?.name {
+      Text(flightName?.name ?? "‼️ne udalosya")
+    }
   }
 }
 
 
-#Preview {
-  PopularDirectionsView(viewModel: .init())
-}
+//#Preview {
+//  PopularDirectionsView(viewModel: .init())
+//}

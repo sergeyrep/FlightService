@@ -30,8 +30,9 @@ final class FlightViewModel: ObservableObject {
   
   @Published var currentLocation: UserIata? {
     didSet {
-      if origin.isEmpty, let cityName = currentLocation?.name {
-        origin = cityName
+      if origin.isEmpty, let cityName = currentLocation {
+        origin = cityName.name ?? "‼️nado kakto razvernut'"
+        originIata = cityName.iata
       }
     }
   }

@@ -89,7 +89,7 @@ struct DetailFlightView: View {
     VStack {
       Image(systemName: "banknote")
         .foregroundStyle(Color.green)
-      Text("билет в \(flight.destination)")
+      Text("билет из \(flight.origin) в \(flight.destination)")
         //.searchable(text: $search)
     }
   }

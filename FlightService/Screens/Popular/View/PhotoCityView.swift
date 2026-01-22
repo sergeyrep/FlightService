@@ -52,7 +52,7 @@ struct PhotoCityView: View {
   }
 }
 
-#Preview {
-  let cityName = "Москва"
-  PhotoCityView(direction: .init(origin: "MOW", destination: "LON", price: 2), cityName: cityName, photoSize: 100, viewModel: .init())
-}
+//#Preview {
+//  let cityName = "Москва"
+//  PhotoCityView(direction: .init(origin: "MOW", destination: "LON", price: 2), cityName: cityName, photoSize: 100, viewModel: .init())
+//}

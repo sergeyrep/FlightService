@@ -1,9 +1,15 @@
 import Foundation
+import SwiftUI
 import Combine
 import UIKit
 
 final class PopularViewModel: ObservableObject {
   
+  //MARK: -DI
+  //private let mainViewModel: MainViewModel
+  private var locationCancellable: AnyCancellable?
+  
+  //MARK: -Published
   @Published var popularDirections: [PopularDirectionsModel] = []
   @Published var isLoading: Bool = false
   
@@ -30,15 +36,18 @@ final class PopularViewModel: ObservableObject {
   let networkServiceCurency: PopularDirectionsServiceProtocol
   
   init(
+    mainViewModel: MainViewModel,
     networkServiceFoto: CityFotoServiceProtocol = CityFotoServices(),
     networkServiceCurency: PopularDirectionsServiceProtocol = PopularDirectionsService(),
-    networkServiceSearchCityIata: SearchIATAServiceProtocol = SearchIATAService()
+    networkServiceSearchCityIata: SearchIATAServiceProtocol = SearchIATAService(),
+    isLocationLoaded: CurrentValueSubject<Bool, Never>
   ) {
+    //self.mainViewModel = mainViewModel
     self.networkServiceFoto = networkServiceFoto
     self.networkServiceCurency = networkServiceCurency
     self.networkServiceSearchCityIata = networkServiceSearchCityIata
     
-    sendLocation()
+    setupLocation(isLocationLoaded)
   }
   
   //MARK: -LoadFunc
@@ -84,12 +93,14 @@ final class PopularViewModel: ObservableObject {
 extension PopularViewModel {
   
   @MainActor
+  //MARK: - вопрос антону - как проверить все ли популяр рейсы запрошены?
   private func loadCityNames(for directions: [PopularDirectionsModel]) async {
     //все запросы параллельно
     await withTaskGroup(of: Void.self) { group in
-      for direction in directions {
+      for direction in directions.prefix(15) {
         group.addTask {
           await self.loadCityName(for: direction.destination)
+          try? await Task.sleep(nanoseconds: 50_000_000)
         }
       }
     }
@@ -101,9 +112,7 @@ extension PopularViewModel {
     if cityNames[cityCode] != nil { return }
     
     do {
-      
         let result = try await networkServiceSearchCityIata.searchCity(query: cityCode)
-      
       
       // Берем первый результат (наиболее релевантный)
       if let firstResult = result.first {
@@ -123,17 +132,40 @@ extension PopularViewModel {
   }
 }
 
+//MARK: -расширение на получение локации
 extension PopularViewModel {
   
-  func sendLocation() {
-    if let cashedLocation = networkServiceLocation.currentLocation {
-      self.currentCityIata = cashedLocation.iata
-      print("Установлена локация: \(cashedLocation.iata) - \(cashedLocation.name ?? "MOW")")
-      //loadDirections()
+  private func setupLocation(_ isLocationLoaded: CurrentValueSubject<Bool, Never>) {
+    locationCancellable = isLocationLoaded
+      .filter { $0 }
+      .first()
+      .sink { [weak self] value in
+        guard let self = self else { return }
+        print("📍 PopularViewModel: MainViewModel готов, можно грузить направления")
+        self.sendLocation()
+      }
+  }
+  
+  private func sendLocation() {
+    if let location = networkServiceLocation.currentLocation {
+      self.currentCity = location
+      print("Установлена локация: \(location.iata) - \(location.name ?? "MOW")")
+      loadDirections()
     } else {
       self.currentCityIata = "MOW"
-      print("Используется локация по умолчанию: MOW")
+      print("📍 PopularViewModel: локация не найдена, используем MOW")
       loadDirections()
     }
+    
+//        if let cashedLocation = networkServiceLocation.currentLocation {
+//         // self.currentCityIata = cashedLocation.iata
+//          self.currentCity = cashedLocation
+//          print("Установлена локация: \(cashedLocation.iata) - \(cashedLocation.name ?? "MOW")")
+//          //loadDirections()
+//        } else {
+//          self.currentCityIata = "MOW"
+//          print("Используется локация по умолчанию: MOW")
+//          loadDirections()
+//        }
   }
 }

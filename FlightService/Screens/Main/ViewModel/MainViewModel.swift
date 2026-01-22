@@ -25,6 +25,8 @@ final class MainViewModel: ObservableObject {
       //searchData.origin = currentCity?.name ?? ""
     }
   }
+
+  var isLocationLoaded: CurrentValueSubject<Bool, Never> = .init(false)
    
   @Published var searchData = FlightSearchData()
   @Published var focusedField: FocusField?
@@ -67,11 +69,10 @@ final class MainViewModel: ObservableObject {
     interpolate(from: 110, to: 60, progress: scrollProgress)
   }
   
-  init() {
+  init() {    
     Task {
       await defenitionLocale()
     }
-    //self.networkService = networkService
   }
   
   private func interpolate(from: CGFloat, to: CGFloat, progress: CGFloat) -> CGFloat {
@@ -81,21 +82,13 @@ final class MainViewModel: ObservableObject {
 
 extension MainViewModel {
   
-//  func newCurrentLocation() async {
-//    do {
-//      let response = try await networkService.sendLocation()
-//    } catch {
-//      print("newCurrentLocation invalid")
-//    }
-//  }
-  
   func defenitionLocale() async {
-   
     do {
       let response = try await networkService.sendLocation()
-      //self.cities = response
       await MainActor.run {
         self.currentCity = response
+        self.isLocationLoaded.value = true
+      print("📍 MainViewModel: локация загружена - \(response.name ?? "‼️ DAFAULT CITY")")
       }
     } catch {
       print("no locale")
@@ -106,6 +99,7 @@ extension MainViewModel {
           countryName: "RU",
           coordinates: nil
         )
+        self.isLocationLoaded.value = true
       }
     }
   }

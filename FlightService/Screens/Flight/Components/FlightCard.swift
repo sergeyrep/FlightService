@@ -11,6 +11,7 @@ struct FlightCard: View {
   let flights: [Flight]
   
   var body: some View {
+    
     ForEach(flights) { flight in
       NavigationLink {
         DetailFlightView(flight: flight)
@@ -30,9 +31,9 @@ struct FlightCard: View {
   }
 }
 
-#Preview {
-  FlightCard(flights: .init())
-}
+//#Preview {
+//  FlightCard(flights: .init())
+//}
 
 //private var cardFlight: some View {
 //  ForEach(viewModel.flights) { flight in

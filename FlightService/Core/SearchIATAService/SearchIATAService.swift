@@ -1,10 +1,3 @@
-//
-//  SearchIATAService.swift
-//  FlightService
-//
-//  Created by Сергей on 01.12.2025.
-//
-
 import Foundation
 
 protocol SearchIATAServiceProtocol {

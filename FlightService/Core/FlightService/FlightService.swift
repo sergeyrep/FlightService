@@ -8,7 +8,12 @@
 import Foundation
 
 protocol FlightServiceProtocol {
-  func sendRequestForFlight(origin: String, destination: String, departDate: Date, returnDate: Date?) async throws -> [Flight]
+  func sendRequestForFlight(
+    origin: String,
+    destination: String,
+    departDate: Date,
+    returnDate: Date?
+  ) async throws -> [Flight]
 }
 
 final class FlightService: FlightServiceProtocol {
@@ -20,13 +25,18 @@ final class FlightService: FlightServiceProtocol {
     self.networkService = networkService
   }
   
-  func sendRequestForFlight(origin: String, destination: String, departDate: Date, returnDate: Date?) async throws -> [Flight] {
+  func sendRequestForFlight(
+    origin: String,
+    destination: String,
+    departDate: Date,
+    returnDate: Date?
+  ) async throws -> [Flight] {
     
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "yyyy-MM-dd"
     
     let departDateString = dateFormatter.string(from: departDate)
-    let returnDateString = returnDate.map { dateFormatter.string(from: $0) }//dateFormatter.string(from: returnDate)
+    let returnDateString = returnDate.map { dateFormatter.string(from: $0) }
     
     let endpoint: EndpointProtocol = ApiMethod.fetchFlight(
       origin: origin,
@@ -42,6 +52,27 @@ final class FlightService: FlightServiceProtocol {
     } catch {
       print("bad response flight")
       throw error
+    }
+  }
+}
+
+// MARK: - Error Types
+enum FlightError: Error, LocalizedError {
+  case invalidOrigin
+  case invalidDestination
+  case networkError(Error)
+  case locationNotFound
+  
+  var errorDescription: String? {
+    switch self {
+    case .invalidOrigin:
+      return "Укажите город отправления"
+    case .invalidDestination:
+      return "Укажите город назначения"
+    case .networkError(let error):
+      return "Ошибка сети: \(error.localizedDescription)"
+    case .locationNotFound:
+      return "Не удалось определить ваше местоположение"
     }
   }
 }
