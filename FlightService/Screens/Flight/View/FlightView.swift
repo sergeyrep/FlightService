@@ -110,8 +110,8 @@ enum IconField: String {
   case magnifyingGlass = "magnifyingglass"
 }
 
-#Preview {
-  FlightView(viewModel: .init())
-}
+//#Preview {
+//  FlightView(viewModel: .init())
+//}
 
 

@@ -6,16 +6,13 @@ import UIKit
 final class PopularViewModel: ObservableObject {
   
   //MARK: -DI
-  //private let mainViewModel: MainViewModel
   private var locationCancellable: AnyCancellable?
   
   //MARK: -Published
   @Published var popularDirections: [PopularDirectionsModel] = []
   @Published var isLoading: Bool = false
-  
   @Published var popularDirectionsNameCity: [CitySuggestion] = []
   @Published var cityNames: [String: String] = [:]
-  
   @Published var currentCity: UserIata? {
     didSet {
       if let currentIata = currentCity?.iata {
@@ -23,6 +20,7 @@ final class PopularViewModel: ObservableObject {
       }
     }
   }
+  
   private var currentCityIata: String = "MOW"
   
   private var cancellables = Set<AnyCancellable>()
@@ -30,22 +28,21 @@ final class PopularViewModel: ObservableObject {
   
   //MARK: -NetworcServices
   let networkServiceSearchCityIata: SearchIATAServiceProtocol
-  let networkServiceLocation: DefenitionLocationServiceProtocol = DefenitionLocationService.shared
-  
+  let networkServiceLocation: DefenitionLocationServiceProtocol
   let networkServiceFoto: CityFotoServiceProtocol
   let networkServiceCurency: PopularDirectionsServiceProtocol
   
   init(
-    mainViewModel: MainViewModel,
-    networkServiceFoto: CityFotoServiceProtocol = CityFotoServices(),
-    networkServiceCurency: PopularDirectionsServiceProtocol = PopularDirectionsService(),
-    networkServiceSearchCityIata: SearchIATAServiceProtocol = SearchIATAService(),
+    networkServiceFoto: CityFotoServiceProtocol,
+    networkServiceCurency: PopularDirectionsServiceProtocol,
+    networkServiceSearchCityIata: SearchIATAServiceProtocol,
+    networkLocationService: DefenitionLocationServiceProtocol,
     isLocationLoaded: CurrentValueSubject<Bool, Never>
   ) {
-    //self.mainViewModel = mainViewModel
     self.networkServiceFoto = networkServiceFoto
     self.networkServiceCurency = networkServiceCurency
     self.networkServiceSearchCityIata = networkServiceSearchCityIata
+    self.networkServiceLocation = networkLocationService
     
     setupLocation(isLocationLoaded)
   }
@@ -93,14 +90,13 @@ final class PopularViewModel: ObservableObject {
 extension PopularViewModel {
   
   @MainActor
-  //MARK: - вопрос антону - как проверить все ли популяр рейсы запрошены?
   private func loadCityNames(for directions: [PopularDirectionsModel]) async {
     //все запросы параллельно
     await withTaskGroup(of: Void.self) { group in
       for direction in directions.prefix(15) {
         group.addTask {
           await self.loadCityName(for: direction.destination)
-          try? await Task.sleep(nanoseconds: 50_000_000)
+          //try? await Task.sleep(nanoseconds: 50_000_000)
         }
       }
     }
@@ -112,7 +108,7 @@ extension PopularViewModel {
     if cityNames[cityCode] != nil { return }
     
     do {
-        let result = try await networkServiceSearchCityIata.searchCity(query: cityCode)
+      let result = try await networkServiceSearchCityIata.searchCity(query: cityCode)
       
       // Берем первый результат (наиболее релевантный)
       if let firstResult = result.first {
@@ -157,15 +153,15 @@ extension PopularViewModel {
       loadDirections()
     }
     
-//        if let cashedLocation = networkServiceLocation.currentLocation {
-//         // self.currentCityIata = cashedLocation.iata
-//          self.currentCity = cashedLocation
-//          print("Установлена локация: \(cashedLocation.iata) - \(cashedLocation.name ?? "MOW")")
-//          //loadDirections()
-//        } else {
-//          self.currentCityIata = "MOW"
-//          print("Используется локация по умолчанию: MOW")
-//          loadDirections()
-//        }
+    //        if let cashedLocation = networkServiceLocation.currentLocation {
+    //         // self.currentCityIata = cashedLocation.iata
+    //          self.currentCity = cashedLocation
+    //          print("Установлена локация: \(cashedLocation.iata) - \(cashedLocation.name ?? "MOW")")
+    //          //loadDirections()
+    //        } else {
+    //          self.currentCityIata = "MOW"
+    //          print("Используется локация по умолчанию: MOW")
+    //          loadDirections()
+    //        }
   }
 }

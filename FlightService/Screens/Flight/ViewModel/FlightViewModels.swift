@@ -47,16 +47,16 @@ final class FlightViewModel: ObservableObject {
   //MARK: -Services
   let networkService: FlightServiceProtocol
   let autocompleteCity: SearchIATAServiceProtocol
-  let defenitionLocation: DefenitionLocationServiceProtocol = DefenitionLocationService.shared
+  let defenitionLocation: DefenitionLocationServiceProtocol
   
   init(
-    networkService: FlightServiceProtocol = FlightService(),
-    autocompletionCity: SearchIATAServiceProtocol = SearchIATAService(),
-    //defenitionLocation: DefenitionLocationServiceProtocol = DefenitionLocationService()
+    networkService: FlightServiceProtocol,
+    autocompletionCity: SearchIATAServiceProtocol,
+    defenitionLocation: DefenitionLocationServiceProtocol
   ) {
     self.networkService = networkService
     self.autocompleteCity = autocompletionCity
-    //self.defenitionLocation = defenitionLocation
+    self.defenitionLocation = defenitionLocation
     
     sinkSearchOrigin()
     sinkSearchDestination()
