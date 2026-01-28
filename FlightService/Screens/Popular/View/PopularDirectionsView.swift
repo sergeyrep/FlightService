@@ -13,7 +13,6 @@ struct PopularDirectionsView: View {
       VStack {
         header
         content
-          .frame(height: 180)
         buttonShowAll
       }
     }
@@ -40,15 +39,31 @@ struct PopularDirectionsView: View {
     ScrollView(.horizontal, showsIndicators: false) {
       LazyHStack(spacing: 8) {
         ForEach(viewModel.popularDirections) { direction in
+          let cityName = viewModel.cityNames[direction.destination] ?? direction.destination
           NavigationLink {
-            DetailPopularFlightView(flight: direction, flightName: viewModel.currentCity)
-          } label: {
-            PhotoCityView(
-              direction: direction,
-              cityName: viewModel.getCityName(for: direction.destination), photoSize: 120,
-              viewModel: viewModel
+            DetailPopularFlightView(
+              cityCode: direction.destination,
+              cityName: cityName
             )
-            .foregroundColor(.black)
+          } label: {
+            VStack {
+              PhotoCityView(
+                cityCode: direction.destination,
+              )
+              .foregroundColor(.black)
+              .frame(width: 150, height: 150)
+              
+              if !viewModel.isLoading {
+                Text(cityName)
+                Text("от \(direction.price)₽")
+              } else {
+                ProgressView()
+                  .controlSize(.mini)
+              }
+            }
+            .task {
+              await viewModel.preloadCityNames()
+            }
           }
         }
       }
@@ -66,22 +81,6 @@ struct PopularDirectionsView: View {
       .padding(.horizontal, 8)
   }
 }
-
-struct DetailPopularFlightView: View {
-  
-  let flight: PopularDirectionsModel
-  let flightName: UserIata?
-  
-  var body: some View {
-//    PhotoCityView(direction: flight, cityName: flight.destination, photoSize: 150, viewModel: .init(mainViewModel: <#MainViewModel#>, isLocationLoaded: <#CurrentValueSubject<Bool, Never>#>) )
-    Text(flight.origin)
-    Text(flight.destination)
-    if let flightNameTo = flightName?.name {
-      Text(flightName?.name ?? "‼️ne udalosya")
-    }
-  }
-}
-
 
 //#Preview {
 //  PopularDirectionsView(viewModel: .init())

@@ -51,11 +51,9 @@ final class MainViewModel: ObservableObject {
   func defenitionLocale() async {
     do {
       let response = try await locationService.sendLocation()
-      //await MainActor.run {
       self.currentCity = response
       self.isLocationLoaded.value = true
       print("📍 MainViewModel: локация загружена - \(response.name ?? "‼️ DAFAULT CITY")")
-      //}
     } catch {
       print("no locale")
       //await MainActor.run {

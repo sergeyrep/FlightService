@@ -4,15 +4,11 @@ import Combine
 import UIKit
 
 final class PopularViewModel: ObservableObject {
-  
-  //MARK: -DI
-  private var locationCancellable: AnyCancellable?
-  
   //MARK: -Published
   @Published var popularDirections: [PopularDirectionsModel] = []
   @Published var isLoading: Bool = false
-  @Published var popularDirectionsNameCity: [CitySuggestion] = []
   @Published var cityNames: [String: String] = [:]
+  
   @Published var currentCity: UserIata? {
     didSet {
       if let currentIata = currentCity?.iata {
@@ -23,108 +19,65 @@ final class PopularViewModel: ObservableObject {
   
   private var currentCityIata: String = "MOW"
   
-  private var cancellables = Set<AnyCancellable>()
-  private var photoURLCache: [String: String] = [:]
+  //MARK: -DI
+  private var locationCancellable: AnyCancellable?
   
-  //MARK: -NetworcServices
-  let networkServiceSearchCityIata: SearchIATAServiceProtocol
-  let networkServiceLocation: DefenitionLocationServiceProtocol
-  let networkServiceFoto: CityFotoServiceProtocol
-  let networkServiceCurency: PopularDirectionsServiceProtocol
+  //MARK: -NetworcService
+  private let networkLocationService: DefenitionLocationServiceProtocol
+  private let networkPopularService: PopularDirectionsServiceProtocol
+  private let cityNameService: CityNameServiceProtocol
   
   init(
-    networkServiceFoto: CityFotoServiceProtocol,
-    networkServiceCurency: PopularDirectionsServiceProtocol,
-    networkServiceSearchCityIata: SearchIATAServiceProtocol,
+    networkPopularService: PopularDirectionsServiceProtocol,
     networkLocationService: DefenitionLocationServiceProtocol,
-    isLocationLoaded: CurrentValueSubject<Bool, Never>
+    isLocationLoaded: CurrentValueSubject<Bool, Never>,
+    cityNameService: CityNameServiceProtocol
   ) {
-    self.networkServiceFoto = networkServiceFoto
-    self.networkServiceCurency = networkServiceCurency
-    self.networkServiceSearchCityIata = networkServiceSearchCityIata
-    self.networkServiceLocation = networkLocationService
+    self.networkPopularService = networkPopularService
+    self.networkLocationService = networkLocationService
+    self.cityNameService = cityNameService
     
     setupLocation(isLocationLoaded)
   }
   
+  //MARK: - LoadCityNames
+  func preloadCityNames() async {
+    for direction in popularDirections {
+      let name = await getCityName(for: direction.destination)
+      cityNames[direction.destination] = name
+    }
+  }
+  
+  private func getCityName(for iata: String) async -> String {
+    return await cityNameService.getCityName(for: iata)
+  }
+  
   //MARK: -LoadFunc
-  func loadDirections() {
+  private func loadDirections() {
     Task {
       await loadPopularDirections()
     }
   }
   
   @MainActor
-  func loadPopularDirections() async {
+  private func loadPopularDirections() async {
     
     isLoading = true
     defer { isLoading = false }
     
     do {
-      let response = try await networkServiceCurency.sendPopularDirections(
+      let response = try await networkPopularService.sendPopularDirections(
         origin: currentCityIata,
         currency: "rub"
       )
       self.popularDirections = response
       
-      await loadCityNames(for: response)
+      let iatas = response.map { $0.destination }
+      await cityNameService.preloadCityNames(for: iatas)
       
     } catch {
       print("❌ Error: \(error)")
     }
-  }
-  
-  func loadFoto(cityCode: String) -> String {
-    
-    if let cashed = photoURLCache[cityCode] {
-      return cashed
-    }
-    
-    let url = "https://photo.hotellook.com/static/cities/960x720/\(cityCode).jpg"
-    photoURLCache[cityCode] = url
-    return url
-  }
-}
-
-//MARK: -Extension
-extension PopularViewModel {
-  
-  @MainActor
-  private func loadCityNames(for directions: [PopularDirectionsModel]) async {
-    //все запросы параллельно
-    await withTaskGroup(of: Void.self) { group in
-      for direction in directions.prefix(15) {
-        group.addTask {
-          await self.loadCityName(for: direction.destination)
-          //try? await Task.sleep(nanoseconds: 50_000_000)
-        }
-      }
-    }
-  }
-  
-  @MainActor
-  private func loadCityName(for cityCode: String) async {
-    // Если уже загружено - пропускаем
-    if cityNames[cityCode] != nil { return }
-    
-    do {
-      let result = try await networkServiceSearchCityIata.searchCity(query: cityCode)
-      
-      // Берем первый результат (наиболее релевантный)
-      if let firstResult = result.first {
-        cityNames[cityCode] = firstResult.name
-      } else {
-        // Если не нашли, используем код как fallback
-        cityNames[cityCode] = cityCode
-      }
-    } catch {
-      print("⚠️ Error loading city name for \(cityCode): \(error)")
-      cityNames[cityCode] = cityCode // Fallback на код
-    }
-  }
-  
-  func getCityName(for cityCode: String) -> String {
-    return cityNames[cityCode] ?? cityCode
   }
 }
 
@@ -143,7 +96,7 @@ extension PopularViewModel {
   }
   
   private func sendLocation() {
-    if let location = networkServiceLocation.currentLocation {
+    if let location = networkLocationService.currentLocation {
       self.currentCity = location
       print("Установлена локация: \(location.iata) - \(location.name ?? "MOW")")
       loadDirections()
@@ -152,16 +105,5 @@ extension PopularViewModel {
       print("📍 PopularViewModel: локация не найдена, используем MOW")
       loadDirections()
     }
-    
-    //        if let cashedLocation = networkServiceLocation.currentLocation {
-    //         // self.currentCityIata = cashedLocation.iata
-    //          self.currentCity = cashedLocation
-    //          print("Установлена локация: \(cashedLocation.iata) - \(cashedLocation.name ?? "MOW")")
-    //          //loadDirections()
-    //        } else {
-    //          self.currentCityIata = "MOW"
-    //          print("Используется локация по умолчанию: MOW")
-    //          loadDirections()
-    //        }
   }
 }

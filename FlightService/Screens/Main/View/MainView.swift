@@ -4,7 +4,6 @@ import SwiftUI
 struct MainView: View {
   
   @StateObject var viewModel: MainViewModel
-  //@StateObject var popularViewModel: PopularViewModel
   
   @FocusState private var isFocused: FocusField?
   
@@ -21,8 +20,7 @@ struct MainView: View {
             progress: viewModel.scrollProgress
           )
           .background(animationSearchBar())
-        ) {
-          
+        ) {          
           PopularDirectionsView(viewModel: makePopularViewModel())
           InterestingContent()
           SalesFlight()
@@ -61,11 +59,11 @@ struct MainView: View {
     let factory = Factory.shared
     
     return PopularViewModel(
-      networkServiceFoto: factory.cityFotoService,
-      networkServiceCurency: factory.popularDirectionsService,
-      networkServiceSearchCityIata: factory.searchIATAService,
+      networkPopularService: factory.popularDirectionsService,
       networkLocationService: factory.locationService,
-      isLocationLoaded: viewModel.isLocationLoaded
+      isLocationLoaded: viewModel.isLocationLoaded,
+      cityNameService: factory.cityNameService,
+      
     )
   }
   

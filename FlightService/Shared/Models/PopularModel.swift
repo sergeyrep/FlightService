@@ -52,4 +52,11 @@ struct PopularDirectionsModel: Identifiable {
   let origin: String
   let destination: String
   let price: Int
+  
+  static let directions: [PopularDirectionsModel] = [
+    PopularDirectionsModel(origin: "Москва", destination: "Париж", price: 10000),
+    PopularDirectionsModel(origin: "Красноярск", destination: "Москва", price: 12000),
+    PopularDirectionsModel(origin: "Абакан", destination: "Кызыл", price: 15000),
+    PopularDirectionsModel(origin: "Новосибирск", destination: "Санкт-Петербург", price: 19000)
+    ]
 }

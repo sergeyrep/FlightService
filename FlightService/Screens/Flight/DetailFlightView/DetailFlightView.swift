@@ -1,15 +1,7 @@
-//
-//  DetailFlightView.swift
-//  FlightService
-//
-//  Created by Сергей on 25.12.2025.
-//
-
 import SwiftUI
 
 struct DetailFlightView: View {
   
-  //@State var search: String = ""
   let flight: Flight
   
   var body: some View {
@@ -90,7 +82,7 @@ struct DetailFlightView: View {
       Image(systemName: "banknote")
         .foregroundStyle(Color.green)
       Text("билет из \(flight.origin) в \(flight.destination)")
-        //.searchable(text: $search)
+      //.searchable(text: $search)
     }
   }
   
@@ -119,7 +111,6 @@ struct DetailFlightView: View {
           Text("Без возврата")
         }
       }
-      //.padding()
     }
     .frame(maxWidth: .infinity)
     .background(.white)

@@ -1,11 +1,5 @@
-//
-//  AllPopularDirectionsView.swift
-//  FlightService
-//
-//  Created by Сергей on 25.12.2025.
-//
-
 import SwiftUI
+import Combine
 
 struct AllPopularDirectionsView: View {
   
@@ -21,15 +15,21 @@ struct AllPopularDirectionsView: View {
                     ],
                   spacing: 10) {
           ForEach(viewModel.popularDirections) { direction in
+            let cityNameDestination = viewModel.cityNames[direction.destination] ?? "Unknown"
             NavigationLink {
-              DetailPopularFlightView(flight: direction, flightName: viewModel.currentCity)
+              DetailPopularFlightView(
+                cityCode: direction.destination,
+                cityName: cityNameDestination
+              )
             } label: {
-              Image(systemName: "square.and.arrow.up")
-//              PhotoCityView(
-//                direction: direction,
-//                cityName: viewModel.getCityName(for: direction.destination), photoSize: 190,
-//                viewModel: .init(mainViewModel: .init())
-//              )
+              VStack {
+                PhotoCityView(
+                  cityCode: direction.destination,
+                )
+                .frame(width: 180, height: 180)
+                
+                Text(cityNameDestination)
+              }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal)
@@ -40,7 +40,3 @@ struct AllPopularDirectionsView: View {
     }
   }
 }
-
-//#Preview {
-//  AllPopularDirectionsView(viewModel: .init())
-//}

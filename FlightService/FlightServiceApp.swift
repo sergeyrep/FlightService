@@ -43,6 +43,10 @@ final class Factory {
     SearchIATAService()
   }()
   
+  lazy var cityNameService: CityNameServiceProtocol = {
+    CityNameService(networkService: SearchIATAService())
+  }()
+  
   init() {}
   
   func makeMainViewModel() -> MainViewModel {
