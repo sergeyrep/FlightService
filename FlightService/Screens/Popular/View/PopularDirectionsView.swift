@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import SwiftUI
 
 struct PopularDirectionsView: View {
@@ -43,7 +44,8 @@ struct PopularDirectionsView: View {
           NavigationLink {
             DetailPopularFlightView(
               cityCode: direction.destination,
-              cityName: cityName
+              cityName: cityName,
+              price: direction.price
             )
           } label: {
             VStack {
@@ -54,8 +56,9 @@ struct PopularDirectionsView: View {
               .frame(width: 150, height: 150)
               
               if !viewModel.isLoading {
-                Text(cityName)
-                Text("от \(direction.price)₽")
+                TitlePopularCard(cityName: cityName, price: direction.price)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                  .padding(.horizontal, 8)
               } else {
                 ProgressView()
                   .controlSize(.mini)
@@ -82,6 +85,25 @@ struct PopularDirectionsView: View {
   }
 }
 
+struct TitlePopularCard: View {
+  let cityName: String
+  let price: Int
+  
+  var body: some View {
+    VStack(alignment: .leading) {
+      Text(cityName)
+      HStack {
+        Image(systemName: "airplane.up.right")
+          .frame(width: 10, height: 10)
+        Text("от \(price)₽")
+      }
+    }
+    .foregroundColor(.black)
+    .font(.system(size: 12))
+  }
+}
+
 //#Preview {
-//  PopularDirectionsView(viewModel: .init())
+//  let factory = Factory.shared
+//  PopularDirectionsView(viewModel: .init(networkPopularService: factory.popularDirectionsService, networkLocationService: factory.locationService, isLocationLoaded: CurrentValueSubject<Bool, Never>(false), cityNameService: factory.cityNameService))
 //}

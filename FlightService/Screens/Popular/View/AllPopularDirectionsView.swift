@@ -19,7 +19,8 @@ struct AllPopularDirectionsView: View {
             NavigationLink {
               DetailPopularFlightView(
                 cityCode: direction.destination,
-                cityName: cityNameDestination
+                cityName: cityNameDestination,
+                price: direction.price
               )
             } label: {
               VStack {
