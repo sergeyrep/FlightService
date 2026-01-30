@@ -1,20 +1,9 @@
-//
-//  ComponentsMainView.swift
-//  FlightService
-//
-//  Created by Сергей on 11.12.2025.
-//
-
 import SwiftUI
 
 struct ComponentsMainView: View {
   var body: some View {
     Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
   }
-}
-
-#Preview {
-  InterestingContent()
 }
 
 struct DestinationCard: View {
@@ -97,7 +86,7 @@ struct SalesFlight: View {
         Button("Больше жарких билетов") {
           
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.glass(.clear))
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.bottom, 10)
       }
@@ -147,7 +136,7 @@ struct WeekendFlight: View {
         Button("Больше жарких билетов") {
           
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.glass(.clear))
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.bottom, 10)
       }
@@ -157,62 +146,5 @@ struct WeekendFlight: View {
   }
 }
 
-struct InterestingContent: View {
-  
-  let fotosCities = ["https://photo.hotellook.com/static/cities/960x720/MOW.jpg", "https://photo.hotellook.com/static/cities/960x720/KZN.jpg", "https://photo.hotellook.com/static/cities/960x720/LON.jpg", "https://photo.hotellook.com/static/cities/960x720/KJA.jpg", "https://photo.hotellook.com/static/cities/960x720/ABA.jpg"]
-  
-  var body: some View {
-    ZStack {
-      Color(.gray)
-      
-      VStack(alignment: .leading) {
-        Text("Увидеть без визы")
-          .font(.system(size: 20, design: .serif))
-          .fontWeight(.bold)
-          .foregroundColor(.black)
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack {
-            ForEach(fotosCities, id: \.self) { foto in
-              
-              VStack {
-                if let url = URL(string: foto) {
-                  AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                      ProfileView()
-                    case .success(let image):
-                      image
-                        .resizable()
-                    case .failure:
-                      Image(systemName: "person.fill")
-                    @unknown default:
-                      EmptyView()
-                    }
-                  }
-                  //.resizable()
-                  .frame(width: 90, height: 90)
-                  Text("Name")
-                  Text("City")
-                  Text("\(Image(systemName: "airplane.circle.fill")) 14500руб")
-                } else {
-                  Image(systemName: "person.fill")
-                }
-              }
-            }
-          }
-        }
-        Button("Показать все места") {
-          
-        }
-        .buttonStyle(.glass)
-        .frame(maxWidth: .infinity, alignment: .center)
-      }
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .padding()
-    }
-    .cornerRadius(20)
-    .padding()
-  }
-}
 
 
