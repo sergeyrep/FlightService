@@ -21,7 +21,7 @@ struct MainView: View {
           )
           .background(animationSearchBar())
         ) {          
-          PopularDirectionsView(viewModel: makePopularViewModel())
+          PopularDirectionsView(viewModel: viewModel.fetchPopularViewModel())
           InterestingContent()
           SalesFlight()
           WeekendFlight()
@@ -31,7 +31,7 @@ struct MainView: View {
     .background(.gray.opacity(0.3))
     .ignoresSafeArea()
     .sheet(isPresented: $viewModel.showFlightResults) {
-      FlightView(viewModel: makeFlightViewModel())
+      FlightView(viewModel: viewModel.fetchFlightViewModel())
       
     }
     .onChange(of: isFocused) { _, newValue in
@@ -43,28 +43,6 @@ struct MainView: View {
     //    .onAppear {
     //      popularViewModel.loadDirections()
     //    }
-  }
-  
-  private func makeFlightViewModel() -> FlightViewModel {
-    let factory = Factory.shared
-    
-    return FlightViewModel(
-      networkService: factory.flightService,
-      autocompletionCity: factory.searchIATAService,
-      defenitionLocation: factory.locationService
-    )
-  }
-  
-  private func makePopularViewModel() -> PopularViewModel {
-    let factory = Factory.shared
-    
-    return PopularViewModel(
-      networkPopularService: factory.popularDirectionsService,
-      networkLocationService: factory.locationService,
-      isLocationLoaded: viewModel.isLocationLoaded,
-      cityNameService: factory.cityNameService,
-      
-    )
   }
   
   @ViewBuilder

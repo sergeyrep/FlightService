@@ -10,9 +10,10 @@ struct FlightView: View {
         searchFlights
         datePickers
         ScrollView(.horizontal) {
-          
+          // дополнительный контент
         }
-        buttonSearch        
+        
+        buttonSearch
         FlightCard(flights: viewModel.flights)
       }
       .background(.gray.opacity(0.3))

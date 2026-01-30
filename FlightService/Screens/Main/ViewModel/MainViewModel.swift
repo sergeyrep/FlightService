@@ -67,6 +67,37 @@ final class MainViewModel: ObservableObject {
       // }
     }
   }
+  
+  func fetchFlightViewModel() -> FlightViewModel {
+    makeFlightViewModel()
+  }
+  
+  func fetchPopularViewModel() -> PopularViewModel {
+    makePopularViewModel()
+  }
+  
+  private func makeFlightViewModel() -> FlightViewModel {
+    let factory = Factory.shared
+    
+    return FlightViewModel(
+      networkService: factory.flightService,
+      autocompletionCity: factory.searchIATAService,
+      defenitionLocation: factory.locationService,
+      initialDestinationName: "Hello",
+      initialDestinationCode: "123"
+    )
+  }
+  
+  private func makePopularViewModel() -> PopularViewModel {
+    let factory = Factory.shared
+    
+    return PopularViewModel(
+      networkPopularService: factory.popularDirectionsService,
+      networkLocationService: factory.locationService,
+      isLocationLoaded: isLocationLoaded,
+      cityNameService: factory.cityNameService,
+    )
+  }
 }
 
 extension MainViewModel {

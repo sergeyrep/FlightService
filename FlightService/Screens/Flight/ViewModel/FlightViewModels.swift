@@ -31,11 +31,12 @@ final class FlightViewModel: ObservableObject {
   @Published var currentLocation: UserIata? {
     didSet {
       if origin.isEmpty, let cityName = currentLocation {
-        origin = cityName.name ?? "‼️nado kakto razvernut'"
+        origin = cityName.name ?? "no cityName"
         originIata = cityName.iata
       }
     }
   }
+  
   
   //MARK: -IATA Codes
   private(set) var originIata: String = ""
@@ -52,17 +53,24 @@ final class FlightViewModel: ObservableObject {
   init(
     networkService: FlightServiceProtocol,
     autocompletionCity: SearchIATAServiceProtocol,
-    defenitionLocation: DefenitionLocationServiceProtocol
+    defenitionLocation: DefenitionLocationServiceProtocol,
+    initialDestinationName: String,
+    initialDestinationCode: String
   ) {
     self.networkService = networkService
     self.autocompleteCity = autocompletionCity
     self.defenitionLocation = defenitionLocation
+    self.destinationIata = initialDestinationCode
+    self.destination = initialDestinationName
+    
     
     sinkSearchOrigin()
     sinkSearchDestination()
-    Task {
-      newDefenitionLocale()
-    }
+    
+    loadData()
+//    Task {
+//      newDefenitionLocale()
+//    }
   }
   
   func loadAllFlights() async {
@@ -194,6 +202,16 @@ extension FlightViewModel {
   func newDefenitionLocale() {
     if let casheLocation = defenitionLocation.currentLocation {
       self.currentLocation = casheLocation
+    }
+  }
+  
+  func loadData() {
+    Task {
+      newDefenitionLocale()
+      
+      if !destination.isEmpty {
+        await loadFlights()
+      }
     }
   }
 }

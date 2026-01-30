@@ -1,9 +1,52 @@
 import SwiftUI
+import Combine
+
+final class DetailPopDirectionViewModel: ObservableObject {
+  
+  @Published var showFlightView: Bool = false
+  @Published var presentedSheet: PresentedSheet?
+  
+  enum PresentedSheet: Identifiable {
+    case flight
+    case impressions
+    
+    var id: Int {
+      switch self {
+      case .flight: return 1
+      case .impressions: return 2
+      }
+    }
+  }
+  
+  func fetchFlightViewModel(
+    for destination: String,
+    destinationCode: String
+  ) -> FlightViewModel {
+    makeFlightViewModel(for: destination, destinationCode: destinationCode)
+  }
+  
+  private func makeFlightViewModel(
+    for destinationName: String,
+    destinationCode: String
+  ) -> FlightViewModel {
+    let factory = Factory.shared
+    
+    return FlightViewModel(
+      networkService: factory.flightService,
+      autocompletionCity: factory.searchIATAService,
+      defenitionLocation: factory.locationService,
+      initialDestinationName: destinationName,
+      initialDestinationCode: destinationCode
+    )
+  }
+}
 
 struct DetailPopularFlightView: View {
+  @StateObject private var viewModel = DetailPopDirectionViewModel()
+  
   let cityCode: String
   let cityName: String
-  let price: Int
+  let price: Int 
   
   var body: some View {
     ZStack(alignment: .bottom) {
@@ -21,7 +64,7 @@ struct DetailPopularFlightView: View {
       
       VStack {
         Button {
-          
+          viewModel.presentedSheet = .flight
         } label: {
           HStack {
             Image(systemName: "airplane.up.right")
@@ -34,7 +77,7 @@ struct DetailPopularFlightView: View {
         .padding(EdgeInsets(top: 8, leading: 8, bottom: 0, trailing: 8))
        
         Button {
-          
+          viewModel.presentedSheet = .impressions
         } label: {
           Text("Посмотреть все города")
             .frame(maxWidth: .infinity)
@@ -46,6 +89,14 @@ struct DetailPopularFlightView: View {
       .background(.white)
       .cornerRadius(20)
       .padding(.horizontal)
+      .sheet(item: $viewModel.presentedSheet) { sheet in
+        switch sheet {
+        case .flight:
+          FlightView(viewModel: viewModel.fetchFlightViewModel(for: cityName, destinationCode: cityCode))
+        case .impressions:
+          ImpressionsView()
+        }
+      }
     }
     .background(.gray.opacity(0.1))
   }
@@ -122,14 +173,8 @@ struct DetailPopularFlightView: View {
     }
     .padding(.horizontal, 20)
     .padding(.bottom, 30)
-//    .background(
-//      Color(.gray.opacity(0.1))
-//        .cornerRadius(0, corners: [.topLeft, .topRight])
-//        //.shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: -5)
-//    )
   }
 }
-
 
 
 // MARK: - Улучшенная модель с дополнительными данными
@@ -222,17 +267,29 @@ struct RoundedCorner: Shape {
 struct DetailPopularFlightView_Previews: PreviewProvider {
   static var previews: some View {
     NavigationView {
-      DetailPopularFlightView(cityCode: "MOW", cityName: "Москва", price: 20500)
+      DetailPopularFlightView(
+        cityCode: "MOW",
+        cityName: "Москва",
+        price: 20500
+      )
     }
     .previewDisplayName("Москва")
     
     NavigationView {
-      DetailPopularFlightView(cityCode: "SPB", cityName: "Санкт-Петербург", price: 20500)
+      DetailPopularFlightView(
+        cityCode: "SPB",
+        cityName: "Санкт-Петербург",
+        price: 20500
+      )
     }
     .previewDisplayName("Санкт-Петербург")
     
     NavigationView {
-      DetailPopularFlightView(cityCode: "XXX", cityName: "Неизвестный город", price: 20500)
+      DetailPopularFlightView(
+        cityCode: "XXX",
+        cityName: "Неизвестный город",
+        price: 20500
+      )
     }
     .previewDisplayName("Город без описания")
   }
